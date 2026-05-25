@@ -5,7 +5,6 @@ import { addBioLink, deleteBioLink, toggleBioLink } from '@/actions/bio'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
 import { Trash2, Plus } from 'lucide-react'
 
 type BioLink = {
