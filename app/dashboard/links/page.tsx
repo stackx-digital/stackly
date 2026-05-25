@@ -15,7 +15,8 @@ export default async function LinksPage() {
     supabase
       .from('links')
       .select(`
-        id, slug, destination_url, title, is_active, created_at, expires_at
+        id, slug, destination_url, title, is_active, created_at, expires_at,
+        utm_source, utm_medium, utm_campaign, utm_term, utm_content
       `)
       .eq('user_id', user.id)
       .eq('is_active', true)

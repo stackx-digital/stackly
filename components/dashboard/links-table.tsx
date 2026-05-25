@@ -18,11 +18,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Copy, ExternalLink, MoreHorizontal, Trash2, BarChart2, QrCode } from 'lucide-react'
+import { Copy, ExternalLink, MoreHorizontal, Trash2, BarChart2, QrCode, Pencil } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { formatDate, truncate } from '@/lib/utils'
 import Link from 'next/link'
 import { QRDialog } from '@/components/dashboard/qr-dialog'
+import { EditLinkDialog } from '@/components/dashboard/edit-link-dialog'
 
 interface LinkRow {
   id: string
@@ -32,6 +33,11 @@ interface LinkRow {
   is_active: boolean
   created_at: string
   expires_at: string | null
+  utm_source: string | null
+  utm_medium: string | null
+  utm_campaign: string | null
+  utm_term: string | null
+  utm_content: string | null
 }
 
 interface LinksTableProps {
@@ -43,6 +49,7 @@ export function LinksTable({ links, baseUrl }: LinksTableProps) {
   const { toast } = useToast()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [qrSlug, setQrSlug] = useState<string | null>(null)
+  const [editingLink, setEditingLink] = useState<LinkRow | null>(null)
 
   const shortUrl = (slug: string) => `${baseUrl}/${slug}`
 
@@ -74,6 +81,13 @@ export function LinksTable({ links, baseUrl }: LinksTableProps) {
 
   return (
     <>
+    {editingLink && (
+      <EditLinkDialog
+        link={editingLink}
+        open={!!editingLink}
+        onOpenChange={(open) => { if (!open) setEditingLink(null) }}
+      />
+    )}
     {activeQrLink && (
       <QRDialog
         url={shortUrl(activeQrLink.slug)}
@@ -128,6 +142,10 @@ export function LinksTable({ links, baseUrl }: LinksTableProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setEditingLink(link)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit link
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleCopy(link.slug)}>
                     <Copy className="mr-2 h-4 w-4" />
                     Copy link

@@ -152,7 +152,13 @@ export async function updateLink(linkId: string, formData: FormData) {
   }
 
   const destinationUrl = formData.get('destination_url') as string
-  const title = formData.get('title') as string | null
+  const title = (formData.get('title') as string | null)?.trim() || null
+  const expiresAt = (formData.get('expires_at') as string | null)?.trim() || null
+  const utmSource = (formData.get('utm_source') as string | null)?.trim() || null
+  const utmMedium = (formData.get('utm_medium') as string | null)?.trim() || null
+  const utmCampaign = (formData.get('utm_campaign') as string | null)?.trim() || null
+  const utmTerm = (formData.get('utm_term') as string | null)?.trim() || null
+  const utmContent = (formData.get('utm_content') as string | null)?.trim() || null
 
   if (!isValidUrl(destinationUrl)) {
     return { error: 'Please enter a valid URL' }
@@ -166,7 +172,13 @@ export async function updateLink(linkId: string, formData: FormData) {
     .from('links')
     .update({
       destination_url: destinationUrl,
-      title: title || null,
+      title,
+      expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+      utm_source: utmSource,
+      utm_medium: utmMedium,
+      utm_campaign: utmCampaign,
+      utm_term: utmTerm,
+      utm_content: utmContent,
       updated_at: new Date().toISOString(),
     })
     .eq('id', linkId)
@@ -177,5 +189,6 @@ export async function updateLink(linkId: string, formData: FormData) {
   }
 
   revalidatePath('/dashboard/links')
+  revalidatePath('/dashboard')
   return { success: true }
 }
