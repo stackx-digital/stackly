@@ -65,6 +65,15 @@ function toDatetimeLocal(iso: string | null): string {
   return iso.slice(0, 16)
 }
 
+function parseGeoRules(raw: unknown): Array<{ country: string; url: string }> {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw as Array<{ country: string; url: string }>
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw) } catch { return [] }
+  }
+  return []
+}
+
 export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -73,6 +82,9 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
   )
   const [showPixel, setShowPixel] = useState(
     !!(link.pixel_fb || link.pixel_ga || link.pixel_gtm || link.pixel_gads || link.pixel_tiktok)
+  )
+  const [showAdvanced, setShowAdvanced] = useState(
+    !!(link.active_from || link.redirect_mobile || link.redirect_tablet || (link.geo_rules && (link.geo_rules as unknown[]).length > 0))
   )
   const [pixels, setPixels] = useState({
     pixel_fb: link.pixel_fb || '',
@@ -89,6 +101,20 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
     utm_term: link.utm_term || '',
     utm_content: link.utm_content || '',
   })
+  const [geoRules, setGeoRules] = useState<Array<{ country: string; url: string }>>(
+    parseGeoRules(link.geo_rules)
+  )
+
+  function addGeoRule() {
+    if (geoRules.length < 5) setGeoRules((prev) => [...prev, { country: '', url: '' }])
+  }
+  function removeGeoRule(idx: number) {
+    setGeoRules((prev) => prev.filter((_, i) => i !== idx))
+  }
+  function updateGeoRule(idx: number, field: 'country' | 'url', value: string) {
+    setGeoRules((prev) => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r))
+  }
+
   const { toast } = useToast()
 
   const hasUtmParams = Object.values(utm).some((v) => v.trim() !== '')
@@ -179,6 +205,129 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
               <p className="text-xs text-muted-foreground">
                 Link will return 404 after this date. Leave empty for no expiry.
               </p>
+            </div>
+
+            {/* Hidden input to pass serialised geo rules */}
+            <input
+              type="hidden"
+              name="geo_rules"
+              value={JSON.stringify(geoRules.filter((r) => r.country && r.url))}
+            />
+
+            {/* Advanced Options */}
+            <div className="border rounded-md overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced((prev) => !prev)}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium bg-muted/40 hover:bg-muted/70 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  Advanced Options
+                  <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
+                </span>
+                {showAdvanced ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </button>
+
+              {showAdvanced && (
+                <div className="px-4 py-4 space-y-4 bg-background">
+                  <div className="space-y-1">
+                    <label htmlFor="edit_active_from" className="text-xs font-medium leading-none">Go live on (optional)</label>
+                    <input
+                      id="edit_active_from"
+                      name="active_from"
+                      type="datetime-local"
+                      defaultValue={toDatetimeLocal(link.active_from)}
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    />
+                    <p className="text-xs text-muted-foreground">Link will return 404 until this time.</p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label htmlFor="edit_password_input" className="text-xs font-medium leading-none">Update password (optional)</label>
+                    <input
+                      id="edit_password_input"
+                      name="password_input"
+                      type="password"
+                      placeholder="Leave blank to keep existing password"
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    />
+                    <p className="text-xs text-muted-foreground">Leave blank to keep the existing password.</p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label htmlFor="edit_redirect_mobile" className="text-xs font-medium leading-none">Mobile Redirect (optional)</label>
+                    <input
+                      id="edit_redirect_mobile"
+                      name="redirect_mobile"
+                      type="url"
+                      placeholder="https://app.example.com/mobile"
+                      defaultValue={link.redirect_mobile || ''}
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label htmlFor="edit_redirect_tablet" className="text-xs font-medium leading-none">Tablet Redirect (optional)</label>
+                    <input
+                      id="edit_redirect_tablet"
+                      name="redirect_tablet"
+                      type="url"
+                      placeholder="https://tablet.example.com"
+                      defaultValue={link.redirect_tablet || ''}
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    />
+                  </div>
+
+                  {/* Geo Rules */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium leading-none">Country Redirect Rules (optional)</span>
+                      {geoRules.length < 5 && (
+                        <button
+                          type="button"
+                          onClick={addGeoRule}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          + Add Rule
+                        </button>
+                      )}
+                    </div>
+                    {geoRules.length === 0 && (
+                      <p className="text-xs text-muted-foreground">No country rules. Click &ldquo;+ Add Rule&rdquo; to redirect specific countries to a different URL.</p>
+                    )}
+                    {geoRules.map((rule, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="MY"
+                          maxLength={2}
+                          value={rule.country}
+                          onChange={(e) => updateGeoRule(idx, 'country', e.target.value.toUpperCase())}
+                          className="flex h-8 w-16 rounded-md border border-input bg-background px-2 text-xs uppercase shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        />
+                        <input
+                          type="url"
+                          placeholder="https://shopee.my"
+                          value={rule.url}
+                          onChange={(e) => updateGeoRule(idx, 'url', e.target.value)}
+                          className="flex h-8 flex-1 rounded-md border border-input bg-background px-2 text-xs shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeGeoRule(idx)}
+                          className="text-xs text-destructive hover:underline shrink-0"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* UTM Parameters */}
