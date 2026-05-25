@@ -18,10 +18,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Copy, ExternalLink, MoreHorizontal, Trash2, BarChart2 } from 'lucide-react'
+import { Copy, ExternalLink, MoreHorizontal, Trash2, BarChart2, QrCode } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { formatDate, truncate } from '@/lib/utils'
 import Link from 'next/link'
+import { QRDialog } from '@/components/dashboard/qr-dialog'
 
 interface LinkRow {
   id: string
@@ -41,6 +42,7 @@ interface LinksTableProps {
 export function LinksTable({ links, baseUrl }: LinksTableProps) {
   const { toast } = useToast()
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [qrSlug, setQrSlug] = useState<string | null>(null)
 
   const shortUrl = (slug: string) => `${baseUrl}/${slug}`
 
@@ -60,6 +62,8 @@ export function LinksTable({ links, baseUrl }: LinksTableProps) {
     setDeletingId(null)
   }
 
+  const activeQrLink = links.find(l => l.slug === qrSlug)
+
   if (links.length === 0) {
     return (
       <div className="text-center py-12">
@@ -69,6 +73,15 @@ export function LinksTable({ links, baseUrl }: LinksTableProps) {
   }
 
   return (
+    <>
+    {activeQrLink && (
+      <QRDialog
+        url={shortUrl(activeQrLink.slug)}
+        slug={activeQrLink.slug}
+        open={!!qrSlug}
+        onOpenChange={(open) => { if (!open) setQrSlug(null) }}
+      />
+    )}
     <Table>
       <TableHeader>
         <TableRow>
@@ -131,6 +144,10 @@ export function LinksTable({ links, baseUrl }: LinksTableProps) {
                       View analytics
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setQrSlug(link.slug)}>
+                    <QrCode className="mr-2 h-4 w-4" />
+                    QR Code
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
                     onClick={() => handleDelete(link.id)}
@@ -146,5 +163,6 @@ export function LinksTable({ links, baseUrl }: LinksTableProps) {
         ))}
       </TableBody>
     </Table>
+    </>
   )
 }
