@@ -10,16 +10,12 @@ import { Link2, MousePointerClick, Users, TrendingUp, Plus, ArrowRight, External
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-
   if (!user) return null
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://stackly.my'
 
-  const [
-    linksResult,
-    subscriptionResult,
-    totalLinksResult,
-  ] = await Promise.all([
+  const [linksResult, subscriptionResult, totalLinksResult, profileResult] = await Promise.all([
     supabase
       .from('links')
       .select('id, slug, destination_url, title, created_at, is_active')
@@ -36,6 +32,11 @@ export default async function DashboardPage() {
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
       .eq('is_active', true),
+    supabase
+      .from('users')
+      .select('full_name')
+      .eq('id', user.id)
+      .single(),
   ])
 
   const links = linksResult.data || []
@@ -43,56 +44,44 @@ export default async function DashboardPage() {
   const planConfig = PLANS[plan]
   const linkLimit = planConfig.linkLimit
   const totalLinks = totalLinksResult.count || 0
+  const firstName = profileResult.data?.full_name?.split(' ')[0] || null
 
-  // Get per-link click counts from link_click_summary view
-  const linkIds = links.map(l => l.id)
-  const [clickSummaryResult, totalClicksResult, uniqueClicksResult] = await Promise.all([
-    linkIds.length > 0
-      ? supabase
-          .from('link_click_summary')
-          .select('link_id, total_clicks, unique_clicks')
-          .in('link_id', linkIds)
-      : Promise.resolve({ data: [] }),
-    supabase
-      .from('clicks')
-      .select('*', { count: 'exact', head: true })
-      .in(
-        'link_id',
-        (await supabase.from('links').select('id').eq('user_id', user.id)).data?.map(l => l.id) || []
-      )
-      .gte('timestamp', thirtyDaysAgo),
-    supabase
-      .from('clicks')
-      .select('*', { count: 'exact', head: true })
-      .in(
-        'link_id',
-        (await supabase.from('links').select('id').eq('user_id', user.id)).data?.map(l => l.id) || []
-      )
-      .eq('is_unique', true)
-      .gte('timestamp', thirtyDaysAgo),
-  ])
+  // Only query clicks if user has links — avoids .in([]) crash
+  const allLinkIds = links.map(l => l.id)
+  let totalClicks30d = 0
+  let uniqueClicks30d = 0
+  const clickSummaryMap = new Map<string, { total_clicks: number; unique_clicks: number }>()
 
-  const clickSummaryMap = new Map(
-    (clickSummaryResult.data || []).map(row => [row.link_id, row])
-  )
-  const totalClicks30d = totalClicksResult.count || 0
-  const uniqueClicks30d = uniqueClicksResult.count || 0
+  if (allLinkIds.length > 0) {
+    const [summaryResult, totalResult, uniqueResult] = await Promise.all([
+      supabase
+        .from('link_click_summary')
+        .select('link_id, total_clicks, unique_clicks')
+        .in('link_id', allLinkIds),
+      supabase
+        .from('clicks')
+        .select('*', { count: 'exact', head: true })
+        .in('link_id', allLinkIds)
+        .gte('timestamp', thirtyDaysAgo),
+      supabase
+        .from('clicks')
+        .select('*', { count: 'exact', head: true })
+        .in('link_id', allLinkIds)
+        .eq('is_unique', true)
+        .gte('timestamp', thirtyDaysAgo),
+    ])
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://stackly.my'
-
-  // Determine greeting
-  const { data: profile } = await supabase
-    .from('users')
-    .select('full_name')
-    .eq('id', user.id)
-    .single()
-  const firstName = profile?.full_name?.split(' ')[0] || null
+    totalClicks30d = totalResult.count || 0
+    uniqueClicks30d = uniqueResult.count || 0
+    for (const row of summaryResult.data || []) {
+      clickSummaryMap.set(row.link_id, row)
+    }
+  }
 
   const showUpgradeBanner = plan === 'free' && totalLinks >= 15
 
   return (
     <div className="space-y-6">
-      {/* Page heading */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">
@@ -110,9 +99,7 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {/* Stat Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Active Links */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Links</CardTitle>
@@ -121,9 +108,7 @@ export default async function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{formatNumber(totalLinks)}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {linkLimit === Infinity
-                ? 'Unlimited on your plan'
-                : `${totalLinks} of ${linkLimit} used`}
+              {linkLimit === Infinity ? 'Unlimited on your plan' : `${totalLinks} of ${linkLimit} used`}
             </p>
             {linkLimit !== Infinity && (
               <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
@@ -136,7 +121,6 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Total Clicks (30d) */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Clicks</CardTitle>
@@ -148,7 +132,6 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Unique Clicks (30d) */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Unique Clicks</CardTitle>
@@ -164,7 +147,6 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Current Plan */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Current Plan</CardTitle>
@@ -188,7 +170,6 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* Recent Links Table */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -203,7 +184,6 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent>
           {links.length === 0 ? (
-            /* Empty state */
             <div className="flex flex-col items-center justify-center py-14 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
                 <Link2 className="h-8 w-8 text-primary" />
@@ -220,7 +200,6 @@ export default async function DashboardPage() {
               </Link>
             </div>
           ) : (
-            /* Table layout */
             <div className="overflow-x-auto -mx-6 md:-mx-8 px-6 md:px-8">
               <table className="w-full text-sm">
                 <thead>
@@ -240,7 +219,7 @@ export default async function DashboardPage() {
                       <tr key={link.id} className="hover:bg-slate-50 transition-colors">
                         <td className="py-3 pr-4">
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="font-medium text-foreground truncate">
+                            <span className="font-medium text-foreground truncate max-w-[160px]">
                               {baseUrl}/{link.slug}
                             </span>
                             <a
@@ -281,7 +260,6 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Upgrade Banner — only shown when free user has 15+ links */}
       {showUpgradeBanner && (
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="flex items-center justify-between gap-4 py-6">
