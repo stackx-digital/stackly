@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Pencil, ChevronDown, ChevronUp } from 'lucide-react'
+import { Pencil, ChevronDown, ChevronUp, FlaskConical } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 interface LinkData {
@@ -36,6 +36,7 @@ interface LinkData {
   redirect_mobile: string | null
   redirect_tablet: string | null
   geo_rules: unknown
+  ab_variants: unknown
 }
 
 interface EditLinkDialogProps {
@@ -65,6 +66,17 @@ function toDatetimeLocal(iso: string | null): string {
   return iso.slice(0, 16)
 }
 
+interface AbVariant { label: string; url: string; weight: number }
+
+function parseAbVariants(raw: unknown): AbVariant[] {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw as AbVariant[]
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw) } catch { return [] }
+  }
+  return []
+}
+
 function parseGeoRules(raw: unknown): Array<{ country: string; url: string }> {
   if (!raw) return []
   if (Array.isArray(raw)) return raw as Array<{ country: string; url: string }>
@@ -86,6 +98,13 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
   const [showAdvanced, setShowAdvanced] = useState(
     !!(link.active_from || link.redirect_mobile || link.redirect_tablet || (link.geo_rules && (link.geo_rules as unknown[]).length > 0))
   )
+  const [showAb, setShowAb] = useState(
+    !!(link.ab_variants && (link.ab_variants as unknown[]).length >= 2)
+  )
+  const existingVariants = parseAbVariants(link.ab_variants)
+  const [abEnabled, setAbEnabled] = useState(existingVariants.length >= 2)
+  const [abBUrl, setAbBUrl] = useState(existingVariants[1]?.url || '')
+  const [abWeightA, setAbWeightA] = useState(existingVariants[0]?.weight ?? 50)
   const [pixels, setPixels] = useState({
     pixel_fb: link.pixel_fb || '',
     pixel_ga: link.pixel_ga || '',
@@ -207,12 +226,114 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
               </p>
             </div>
 
-            {/* Hidden input to pass serialised geo rules */}
+            {/* Hidden inputs to pass serialised rules */}
             <input
               type="hidden"
               name="geo_rules"
               value={JSON.stringify(geoRules.filter((r) => r.country && r.url))}
             />
+            <input
+              type="hidden"
+              name="ab_variants"
+              value={abEnabled && abBUrl.trim()
+                ? JSON.stringify([
+                    { label: 'A', url: destinationUrl, weight: abWeightA },
+                    { label: 'B', url: abBUrl.trim(), weight: 100 - abWeightA },
+                  ])
+                : '[]'}
+            />
+
+            {/* A/B Split Test */}
+            <div className="border rounded-md overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowAb((prev) => !prev)}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium bg-muted/40 hover:bg-muted/70 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <FlaskConical className="h-4 w-4 text-muted-foreground" />
+                  A/B Split Test
+                  <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
+                  {abEnabled && abBUrl.trim() && (
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                      Active
+                    </span>
+                  )}
+                </span>
+                {showAb ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </button>
+
+              {showAb && (
+                <div className="px-4 py-4 space-y-4 bg-background">
+                  <p className="text-xs text-muted-foreground">
+                    Split traffic between two destination URLs and track which converts better.
+                  </p>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="edit_ab_enabled"
+                      checked={abEnabled}
+                      onChange={(e) => setAbEnabled(e.target.checked)}
+                      className="h-4 w-4 rounded border-input accent-primary"
+                    />
+                    <label htmlFor="edit_ab_enabled" className="text-sm font-medium cursor-pointer">
+                      Enable A/B testing for this link
+                    </label>
+                  </div>
+
+                  {abEnabled && (
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium leading-none text-muted-foreground">Variant A (current destination URL)</label>
+                        <div className="flex h-8 items-center rounded-md border bg-muted px-3 text-xs font-mono text-muted-foreground break-all">
+                          {destinationUrl || '(same as destination above)'}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label htmlFor="edit_ab_b_url" className="text-xs font-medium leading-none">Variant B URL *</label>
+                        <input
+                          id="edit_ab_b_url"
+                          type="url"
+                          placeholder="https://landing-page-b.com"
+                          value={abBUrl}
+                          onChange={(e) => setAbBUrl(e.target.value)}
+                          className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-medium leading-none">Traffic split</label>
+                          <span className="text-xs text-muted-foreground">
+                            A: <strong>{abWeightA}%</strong> / B: <strong>{100 - abWeightA}%</strong>
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={10}
+                          max={90}
+                          step={5}
+                          value={abWeightA}
+                          onChange={(e) => setAbWeightA(Number(e.target.value))}
+                          className="w-full accent-primary"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>A wins (90%)</span>
+                          <span>Equal</span>
+                          <span>B wins (90%)</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Advanced Options */}
             <div className="border rounded-md overflow-hidden">

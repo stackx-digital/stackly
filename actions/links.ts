@@ -92,6 +92,16 @@ export async function createLink(formData: FormData) {
     }
   }
 
+  const abVariantsRaw = formData.get('ab_variants') as string | null
+  let abVariants: Array<{ label: string; url: string; weight: number }> = []
+  if (abVariantsRaw) {
+    try {
+      abVariants = JSON.parse(abVariantsRaw)
+    } catch {
+      // ignore parse errors
+    }
+  }
+
   const { error } = await supabase.from('links').insert({
     user_id: user.id,
     slug,
@@ -112,6 +122,7 @@ export async function createLink(formData: FormData) {
     redirect_mobile: redirectMobile,
     redirect_tablet: redirectTablet,
     geo_rules: geoRules,
+    ab_variants: abVariants,
   })
 
   if (error) {
@@ -226,6 +237,16 @@ export async function updateLink(linkId: string, formData: FormData) {
     }
   }
 
+  const abVariantsRaw = formData.get('ab_variants') as string | null
+  let abVariants: Array<{ label: string; url: string; weight: number }> = []
+  if (abVariantsRaw) {
+    try {
+      abVariants = JSON.parse(abVariantsRaw)
+    } catch {
+      // ignore parse errors
+    }
+  }
+
   if (!isValidUrl(destinationUrl)) {
     return { error: 'Please enter a valid URL' }
   }
@@ -254,6 +275,7 @@ export async function updateLink(linkId: string, formData: FormData) {
     redirect_mobile: redirectMobile,
     redirect_tablet: redirectTablet,
     geo_rules: geoRules,
+    ab_variants: abVariants,
     updated_at: new Date().toISOString(),
   }
 

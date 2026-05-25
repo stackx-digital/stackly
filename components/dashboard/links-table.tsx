@@ -47,6 +47,7 @@ interface LinkRow {
   redirect_mobile: string | null
   redirect_tablet: string | null
   geo_rules: unknown
+  ab_variants: unknown
 }
 
 interface LinksTableProps {

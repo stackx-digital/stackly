@@ -61,7 +61,7 @@ export default async function SlugPage({
   // Fetch link with all fields including new enhancements
   const { data: link } = await supabase
     .from('links')
-    .select('id, destination_url, is_active, expires_at, utm_source, utm_medium, utm_campaign, utm_term, utm_content, pixel_fb, pixel_ga, pixel_gtm, pixel_gads, pixel_tiktok, active_from, password_hash, redirect_mobile, redirect_tablet, geo_rules')
+    .select('id, destination_url, is_active, expires_at, utm_source, utm_medium, utm_campaign, utm_term, utm_content, pixel_fb, pixel_ga, pixel_gtm, pixel_gads, pixel_tiktok, active_from, password_hash, redirect_mobile, redirect_tablet, geo_rules, ab_variants')
     .eq('slug', slug)
     .single()
 
@@ -124,6 +124,29 @@ export default async function SlugPage({
   // Get geo info
   const geo = await getGeoInfo(ip)
 
+  // A/B Split Testing: pick variant by weight before other routing
+  type AbVariant = { label: string; url: string; weight: number }
+  const abVariants: AbVariant[] = Array.isArray(link.ab_variants) && (link.ab_variants as AbVariant[]).length >= 2
+    ? (link.ab_variants as AbVariant[])
+    : []
+
+  let abVariantLabel: string | null = null
+  let baseDestination = link.destination_url
+
+  if (abVariants.length >= 2) {
+    const totalWeight = abVariants.reduce((sum, v) => sum + (v.weight || 0), 0)
+    const rand = Math.random() * totalWeight
+    let cumulative = 0
+    for (const variant of abVariants) {
+      cumulative += variant.weight || 0
+      if (rand < cumulative) {
+        baseDestination = variant.url
+        abVariantLabel = variant.label
+        break
+      }
+    }
+  }
+
   // Insert click record with both incoming UTM (Feature B) captured
   await supabase.from('clicks').insert({
     link_id: link.id,
@@ -141,10 +164,11 @@ export default async function SlugPage({
     utm_campaign: incomingUtm.utm_campaign,
     utm_term: incomingUtm.utm_term,
     utm_content: incomingUtm.utm_content,
+    ab_variant: abVariantLabel,
   })
 
-  // Determine final destination: geo > device > default
-  let finalDestination = link.destination_url
+  // Determine final destination: geo > device > A/B base
+  let finalDestination = baseDestination
 
   // Geo routing
   const geoRules: Array<{ country: string; url: string }> = Array.isArray(link.geo_rules) ? link.geo_rules : []

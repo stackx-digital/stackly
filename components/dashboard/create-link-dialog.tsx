@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Plus, Link2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Link2, ChevronDown, ChevronUp, FlaskConical } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
 
@@ -71,6 +71,10 @@ export function CreateLinkDialog({ canCreate, plan: _plan }: CreateLinkDialogPro
     pixel_tiktok: '',
   })
   const [geoRules, setGeoRules] = useState<Array<{ country: string; url: string }>>([])
+  const [showAb, setShowAb] = useState(false)
+  const [abEnabled, setAbEnabled] = useState(false)
+  const [abBUrl, setAbBUrl] = useState('')
+  const [abWeightA, setAbWeightA] = useState(50)
 
   function addGeoRule() {
     if (geoRules.length < 5) setGeoRules((prev) => [...prev, { country: '', url: '' }])
@@ -92,9 +96,13 @@ export function CreateLinkDialog({ canCreate, plan: _plan }: CreateLinkDialogPro
     setUtm({ utm_source: '', utm_medium: '', utm_campaign: '', utm_term: '', utm_content: '' })
     setPixels({ pixel_fb: '', pixel_ga: '', pixel_gtm: '', pixel_gads: '', pixel_tiktok: '' })
     setGeoRules([])
+    setAbEnabled(false)
+    setAbBUrl('')
+    setAbWeightA(50)
     setShowUtm(false)
     setShowPixel(false)
     setShowAdvanced(false)
+    setShowAb(false)
     setError(null)
   }
 
@@ -194,12 +202,114 @@ export function CreateLinkDialog({ canCreate, plan: _plan }: CreateLinkDialogPro
               </p>
             </div>
 
-            {/* Hidden input to pass serialised geo rules */}
+            {/* Hidden inputs */}
             <input
               type="hidden"
               name="geo_rules"
               value={JSON.stringify(geoRules.filter((r) => r.country && r.url))}
             />
+            <input
+              type="hidden"
+              name="ab_variants"
+              value={abEnabled && abBUrl.trim()
+                ? JSON.stringify([
+                    { label: 'A', url: destinationUrl, weight: abWeightA },
+                    { label: 'B', url: abBUrl.trim(), weight: 100 - abWeightA },
+                  ])
+                : '[]'}
+            />
+
+            {/* A/B Split Test */}
+            <div className="border rounded-md overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowAb((prev) => !prev)}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium bg-muted/40 hover:bg-muted/70 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <FlaskConical className="h-4 w-4 text-muted-foreground" />
+                  A/B Split Test
+                  <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
+                  {abEnabled && abBUrl.trim() && (
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                      Active
+                    </span>
+                  )}
+                </span>
+                {showAb ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </button>
+
+              {showAb && (
+                <div className="px-4 py-4 space-y-4 bg-background">
+                  <p className="text-xs text-muted-foreground">
+                    Split traffic between two destination URLs and track which converts better.
+                  </p>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="ab_enabled"
+                      checked={abEnabled}
+                      onChange={(e) => setAbEnabled(e.target.checked)}
+                      className="h-4 w-4 rounded border-input accent-primary"
+                    />
+                    <label htmlFor="ab_enabled" className="text-sm font-medium cursor-pointer">
+                      Enable A/B testing for this link
+                    </label>
+                  </div>
+
+                  {abEnabled && (
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium leading-none text-muted-foreground">Variant A (destination URL above)</label>
+                        <div className="flex h-8 items-center rounded-md border bg-muted px-3 text-xs font-mono text-muted-foreground break-all">
+                          {destinationUrl || '(fill in destination URL above)'}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label htmlFor="ab_b_url" className="text-xs font-medium leading-none">Variant B URL *</label>
+                        <input
+                          id="ab_b_url"
+                          type="url"
+                          placeholder="https://landing-page-b.com"
+                          value={abBUrl}
+                          onChange={(e) => setAbBUrl(e.target.value)}
+                          className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-medium leading-none">Traffic split</label>
+                          <span className="text-xs text-muted-foreground">
+                            A: <strong>{abWeightA}%</strong> / B: <strong>{100 - abWeightA}%</strong>
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={10}
+                          max={90}
+                          step={5}
+                          value={abWeightA}
+                          onChange={(e) => setAbWeightA(Number(e.target.value))}
+                          className="w-full accent-primary"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>A wins (90%)</span>
+                          <span>Equal</span>
+                          <span>B wins (90%)</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Advanced Options collapsible section */}
             <div className="border rounded-md overflow-hidden">
