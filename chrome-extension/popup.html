@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stackly</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- LOGIN VIEW -->
+  <div id="login-view" class="view hidden">
+    <div class="header">
+      <div class="logo">
+        <img src="icons/icon48.png" width="24" height="24" alt="" />
+        <span>Stackly</span>
+      </div>
+    </div>
+    <div class="login-body">
+      <h2>Welcome back</h2>
+      <p class="subtitle">Sign in to shorten &amp; track links</p>
+      <form id="login-form">
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" type="email" placeholder="you@example.com" required />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="••••••••" required />
+        </div>
+        <div id="login-error" class="error hidden"></div>
+        <button type="submit" id="login-btn" class="btn btn-primary w-full">
+          Sign In
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MAIN VIEW -->
+  <div id="main-view" class="view hidden">
+    <div class="header">
+      <div class="logo">
+        <img src="icons/icon48.png" width="20" height="20" alt="" />
+        <span>Stackly</span>
+      </div>
+      <div class="header-actions">
+        <a id="dashboard-link" href="#" target="_blank" class="btn btn-ghost btn-sm">Dashboard</a>
+        <button id="logout-btn" class="btn btn-ghost btn-sm">Sign out</button>
+      </div>
+    </div>
+
+    <div class="body">
+      <!-- Shorten current page -->
+      <div class="section">
+        <div id="shorten-idle">
+          <div class="current-url" id="current-url-display"></div>
+          <button id="shorten-btn" class="btn btn-primary w-full mt-2">
+            Shorten this page
+          </button>
+        </div>
+
+        <div id="shorten-loading" class="hidden center py-3">
+          <div class="spinner"></div>
+          <span class="text-sm text-muted">Shortening…</span>
+        </div>
+
+        <div id="shorten-result" class="hidden">
+          <div class="result-box">
+            <span id="result-url" class="result-url"></span>
+            <button id="copy-btn" class="btn btn-outline btn-sm">Copy</button>
+          </div>
+          <button id="shorten-another" class="btn btn-ghost btn-sm w-full mt-1">
+            Shorten another
+          </button>
+        </div>
+      </div>
+
+      <!-- Recent links -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Recent Links</span>
+          <button id="refresh-btn" class="btn btn-ghost btn-xs" title="Refresh">↻</button>
+        </div>
+
+        <div id="links-loading" class="center py-4">
+          <div class="spinner"></div>
+        </div>
+
+        <div id="links-empty" class="hidden center py-4">
+          <span class="text-sm text-muted">No links yet.</span>
+        </div>
+
+        <ul id="links-list" class="hidden links-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
