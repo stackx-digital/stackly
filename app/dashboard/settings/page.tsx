@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SettingsForm } from '@/components/dashboard/settings-form'
+import { SendTestEmailButton } from '@/components/dashboard/send-test-email-button'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -33,6 +34,32 @@ export default async function SettingsPage() {
               email: profile?.email || user.email || '',
             }}
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Email Reports</CardTitle>
+          <CardDescription>
+            Weekly performance summaries are sent every Monday at 9:00 AM MYT.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div>
+              <p className="text-sm font-medium">Weekly report</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Top links, total clicks, and week-over-week comparison sent to your email every Monday.
+              </p>
+            </div>
+            <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+              Active
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">Preview what the report looks like</p>
+            <SendTestEmailButton />
+          </div>
         </CardContent>
       </Card>
 
