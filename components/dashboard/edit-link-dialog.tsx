@@ -32,6 +32,10 @@ interface LinkData {
   pixel_gtm: string | null
   pixel_gads: string | null
   pixel_tiktok: string | null
+  active_from: string | null
+  redirect_mobile: string | null
+  redirect_tablet: string | null
+  geo_rules: unknown
 }
 
 interface EditLinkDialogProps {

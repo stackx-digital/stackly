@@ -1,9 +1,10 @@
 import { redirect, notFound } from 'next/navigation'
-import { headers } from 'next/headers'
+import { headers, cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { UAParser } from 'ua-parser-js'
 import crypto from 'crypto'
 import { PixelRedirect } from '@/components/pixel-redirect'
+import { PasswordGate } from '@/components/password-gate'
 
 async function getGeoInfo(ip: string): Promise<{ country?: string }> {
   try {
@@ -57,10 +58,10 @@ export default async function SlugPage({
     utm_content: typeof searchParams.utm_content === 'string' ? searchParams.utm_content : null,
   }
 
-  // Feature A: Fetch link with UTM builder fields and pixel tracking fields
+  // Fetch link with all fields including new enhancements
   const { data: link } = await supabase
     .from('links')
-    .select('id, destination_url, is_active, expires_at, utm_source, utm_medium, utm_campaign, utm_term, utm_content, pixel_fb, pixel_ga, pixel_gtm, pixel_gads, pixel_tiktok')
+    .select('id, destination_url, is_active, expires_at, utm_source, utm_medium, utm_campaign, utm_term, utm_content, pixel_fb, pixel_ga, pixel_gtm, pixel_gads, pixel_tiktok, active_from, password_hash, redirect_mobile, redirect_tablet, geo_rules')
     .eq('slug', slug)
     .single()
 
@@ -70,6 +71,20 @@ export default async function SlugPage({
 
   if (link.expires_at && new Date(link.expires_at) < new Date()) {
     notFound()
+  }
+
+  // Scheduling: not yet active
+  if (link.active_from && new Date(link.active_from) > new Date()) {
+    notFound()
+  }
+
+  // Password protection
+  if (link.password_hash) {
+    const cookieStore = await cookies()
+    const verified = cookieStore.get(`pw-${link.id}`)?.value === link.password_hash
+    if (!verified) {
+      return <PasswordGate linkId={link.id} slug={slug} />
+    }
   }
 
   // Track the click asynchronously - don't block redirect
@@ -128,10 +143,21 @@ export default async function SlugPage({
     utm_content: incomingUtm.utm_content,
   })
 
-  // Feature A: Build redirect URL with link's UTM builder params appended
-  const finalUrl = buildRedirectUrl(link.destination_url, link)
+  // Determine final destination: geo > device > default
+  let finalDestination = link.destination_url
 
-  // If any pixel is configured, show intermediate pixel page; otherwise redirect immediately
+  // Geo routing
+  const geoRules: Array<{ country: string; url: string }> = Array.isArray(link.geo_rules) ? link.geo_rules : []
+  const geoMatch = geo.country ? geoRules.find((r) => r.country === geo.country) : null
+  if (geoMatch?.url) {
+    finalDestination = geoMatch.url
+  } else if (device === 'mobile' && link.redirect_mobile) {
+    finalDestination = link.redirect_mobile
+  } else if (device === 'tablet' && link.redirect_tablet) {
+    finalDestination = link.redirect_tablet
+  }
+
+  const finalUrl = buildRedirectUrl(finalDestination, link)
   const hasPixels = !!(link.pixel_fb || link.pixel_ga || link.pixel_gtm || link.pixel_gads || link.pixel_tiktok)
 
   if (!hasPixels) {

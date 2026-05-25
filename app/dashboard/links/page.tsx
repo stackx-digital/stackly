@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { CreateLinkDialog } from '@/components/dashboard/create-link-dialog'
 import { LinksTable } from '@/components/dashboard/links-table'
+import { BulkImportDialog } from '@/components/dashboard/bulk-import-dialog'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { PLANS } from '@/lib/plans'
@@ -17,7 +18,8 @@ export default async function LinksPage() {
       .select(`
         id, slug, destination_url, title, is_active, created_at, expires_at,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-        pixel_fb, pixel_ga, pixel_gtm, pixel_gads, pixel_tiktok
+        pixel_fb, pixel_ga, pixel_gtm, pixel_gads, pixel_tiktok,
+        active_from, redirect_mobile, redirect_tablet, geo_rules
       `)
       .eq('user_id', user.id)
       .eq('is_active', true)
@@ -44,7 +46,10 @@ export default async function LinksPage() {
             {links.length} {linkLimit !== Infinity ? `of ${linkLimit}` : ''} links
           </p>
         </div>
-        <CreateLinkDialog canCreate={canCreate} plan={plan} />
+        <div className="flex items-center gap-2">
+          <BulkImportDialog canCreate={canCreate} />
+          <CreateLinkDialog canCreate={canCreate} plan={plan} />
+        </div>
       </div>
 
       {!canCreate && (

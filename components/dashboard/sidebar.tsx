@@ -4,12 +4,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { Link2, LayoutDashboard, BarChart3, CreditCard, Settings } from 'lucide-react'
+import { Link2, LayoutDashboard, BarChart3, CreditCard, Settings, Layers } from 'lucide-react'
 
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/links', label: 'My Links', icon: Link2, exact: false },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3, exact: false },
+  { href: '/dashboard/bio', label: 'Link-in-Bio', icon: Layers, exact: false },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard, exact: false },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings, exact: false },
 ]
