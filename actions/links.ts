@@ -55,11 +55,22 @@ export async function createLink(formData: FormData) {
     } while (!(await isSlugAvailable(slug)))
   }
 
+  const utmSource = (formData.get('utm_source') as string | null)?.trim() || null
+  const utmMedium = (formData.get('utm_medium') as string | null)?.trim() || null
+  const utmCampaign = (formData.get('utm_campaign') as string | null)?.trim() || null
+  const utmTerm = (formData.get('utm_term') as string | null)?.trim() || null
+  const utmContent = (formData.get('utm_content') as string | null)?.trim() || null
+
   const { error } = await supabase.from('links').insert({
     user_id: user.id,
     slug,
     destination_url: destinationUrl,
     title: title || null,
+    utm_source: utmSource,
+    utm_medium: utmMedium,
+    utm_campaign: utmCampaign,
+    utm_term: utmTerm,
+    utm_content: utmContent,
   })
 
   if (error) {
@@ -92,6 +103,44 @@ export async function deleteLink(linkId: string) {
   revalidatePath('/dashboard/links')
   revalidatePath('/dashboard')
   return { success: true }
+}
+
+export async function getLinks() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: 'Unauthorized', data: null }
+  }
+
+  const { data, error } = await supabase
+    .from('links')
+    .select(`
+      id,
+      slug,
+      destination_url,
+      title,
+      is_active,
+      created_at,
+      utm_source,
+      utm_medium,
+      utm_campaign,
+      utm_term,
+      utm_content,
+      link_click_summary (
+        total_clicks,
+        unique_clicks
+      )
+    `)
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    return { error: error.message, data: null }
+  }
+
+  return { data, error: null }
 }
 
 export async function updateLink(linkId: string, formData: FormData) {

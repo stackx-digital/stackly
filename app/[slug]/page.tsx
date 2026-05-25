@@ -18,13 +18,48 @@ async function getGeoInfo(ip: string): Promise<{ country?: string }> {
   }
 }
 
-export default async function SlugPage({ params }: { params: { slug: string } }) {
+function buildRedirectUrl(
+  baseUrl: string,
+  link: {
+    utm_source?: string | null
+    utm_medium?: string | null
+    utm_campaign?: string | null
+    utm_term?: string | null
+    utm_content?: string | null
+  }
+): string {
+  const url = new URL(baseUrl)
+  if (link.utm_source) url.searchParams.set('utm_source', link.utm_source)
+  if (link.utm_medium) url.searchParams.set('utm_medium', link.utm_medium)
+  if (link.utm_campaign) url.searchParams.set('utm_campaign', link.utm_campaign)
+  if (link.utm_term) url.searchParams.set('utm_term', link.utm_term)
+  if (link.utm_content) url.searchParams.set('utm_content', link.utm_content)
+  return url.toString()
+}
+
+export default async function SlugPage({
+  params,
+  searchParams,
+}: {
+  params: { slug: string }
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
   const { slug } = params
   const supabase = await createClient()
 
+  // Feature B: Capture incoming UTM params from the click URL
+  const incomingUtm = {
+    utm_source: typeof searchParams.utm_source === 'string' ? searchParams.utm_source : null,
+    utm_medium: typeof searchParams.utm_medium === 'string' ? searchParams.utm_medium : null,
+    utm_campaign: typeof searchParams.utm_campaign === 'string' ? searchParams.utm_campaign : null,
+    utm_term: typeof searchParams.utm_term === 'string' ? searchParams.utm_term : null,
+    utm_content: typeof searchParams.utm_content === 'string' ? searchParams.utm_content : null,
+  }
+
+  // Feature A: Fetch link with UTM builder fields
   const { data: link } = await supabase
     .from('links')
-    .select('id, destination_url, is_active, expires_at')
+    .select('id, destination_url, is_active, expires_at, utm_source, utm_medium, utm_campaign, utm_term, utm_content')
     .eq('slug', slug)
     .single()
 
@@ -73,7 +108,7 @@ export default async function SlugPage({ params }: { params: { slug: string } })
   // Get geo info
   const geo = await getGeoInfo(ip)
 
-  // Insert click record
+  // Insert click record with both incoming UTM (Feature B) captured
   await supabase.from('clicks').insert({
     link_id: link.id,
     ip_hash: ipHash,
@@ -84,7 +119,14 @@ export default async function SlugPage({ params }: { params: { slug: string } })
     referrer: referrer ? referrer.slice(0, 500) : null,
     user_agent: userAgent.slice(0, 500),
     is_unique: isUnique,
+    // Incoming UTM (from the click URL - Feature B)
+    utm_source: incomingUtm.utm_source,
+    utm_medium: incomingUtm.utm_medium,
+    utm_campaign: incomingUtm.utm_campaign,
+    utm_term: incomingUtm.utm_term,
+    utm_content: incomingUtm.utm_content,
   })
 
-  redirect(link.destination_url)
+  // Feature A: Build redirect URL with link's UTM builder params appended
+  redirect(buildRedirectUrl(link.destination_url, link))
 }

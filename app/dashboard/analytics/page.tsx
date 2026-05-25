@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { getUserPlan, canAccessAdvancedAnalytics } from '@/lib/planGuard'
 import { formatNumber } from '@/lib/utils'
-import { BarChart3, MousePointerClick, Globe, Smartphone, TrendingUp } from 'lucide-react'
+import { BarChart3, MousePointerClick, Globe, Smartphone, TrendingUp, Tag } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
@@ -37,6 +37,9 @@ export default async function AnalyticsPage({
   let countryStats: { country: string; count: number }[] = []
   let deviceStats: { device: string; count: number }[] = []
   let browserStats: { browser: string; count: number }[] = []
+  let utmSourceStats: { utm_source: string; count: number }[] = []
+  let utmMediumStats: { utm_medium: string; count: number }[] = []
+  let utmCampaignStats: { utm_campaign: string; count: number }[] = []
 
   if (selectedLinkId) {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
@@ -61,7 +64,7 @@ export default async function AnalyticsPage({
     }
 
     if (hasAdvanced) {
-      const [countryResult, deviceResult, browserResult] = await Promise.all([
+      const [countryResult, deviceResult, browserResult, utmSourceResult, utmMediumResult, utmCampaignResult] = await Promise.all([
         supabase
           .from('clicks')
           .select('country')
@@ -79,6 +82,24 @@ export default async function AnalyticsPage({
           .eq('link_id', selectedLinkId)
           .gte('timestamp', thirtyDaysAgo)
           .not('browser', 'is', null),
+        supabase
+          .from('clicks')
+          .select('utm_source')
+          .eq('link_id', selectedLinkId)
+          .gte('timestamp', thirtyDaysAgo)
+          .not('utm_source', 'is', null),
+        supabase
+          .from('clicks')
+          .select('utm_medium')
+          .eq('link_id', selectedLinkId)
+          .gte('timestamp', thirtyDaysAgo)
+          .not('utm_medium', 'is', null),
+        supabase
+          .from('clicks')
+          .select('utm_campaign')
+          .eq('link_id', selectedLinkId)
+          .gte('timestamp', thirtyDaysAgo)
+          .not('utm_campaign', 'is', null),
       ])
 
       // Aggregate country stats
@@ -114,6 +135,42 @@ export default async function AnalyticsPage({
         .map(([browser, count]) => ({ browser, count }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 5)
+
+      // Aggregate UTM source stats
+      const utmSourceCounts = (utmSourceResult.data || []).reduce((acc: Record<string, number>, row) => {
+        if (row.utm_source) {
+          acc[row.utm_source] = (acc[row.utm_source] || 0) + 1
+        }
+        return acc
+      }, {})
+      utmSourceStats = Object.entries(utmSourceCounts)
+        .map(([utm_source, count]) => ({ utm_source, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10)
+
+      // Aggregate UTM medium stats
+      const utmMediumCounts = (utmMediumResult.data || []).reduce((acc: Record<string, number>, row) => {
+        if (row.utm_medium) {
+          acc[row.utm_medium] = (acc[row.utm_medium] || 0) + 1
+        }
+        return acc
+      }, {})
+      utmMediumStats = Object.entries(utmMediumCounts)
+        .map(([utm_medium, count]) => ({ utm_medium, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10)
+
+      // Aggregate UTM campaign stats
+      const utmCampaignCounts = (utmCampaignResult.data || []).reduce((acc: Record<string, number>, row) => {
+        if (row.utm_campaign) {
+          acc[row.utm_campaign] = (acc[row.utm_campaign] || 0) + 1
+        }
+        return acc
+      }, {})
+      utmCampaignStats = Object.entries(utmCampaignCounts)
+        .map(([utm_campaign, count]) => ({ utm_campaign, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10)
     }
   }
 
@@ -202,6 +259,91 @@ export default async function AnalyticsPage({
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {hasAdvanced && (utmSourceStats.length > 0 || utmMediumStats.length > 0 || utmCampaignStats.length > 0) && (
+            <div className="grid gap-6 md:grid-cols-3">
+              {utmSourceStats.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Tag className="h-4 w-4" />
+                      UTM Sources
+                    </CardTitle>
+                    <CardDescription>Last 30 days</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {utmSourceStats.map(({ utm_source, count }) => (
+                        <div key={utm_source} className="flex items-center justify-between">
+                          <span className="text-sm font-medium truncate max-w-[120px]">{utm_source}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 bg-primary rounded-full" style={{
+                              width: `${Math.max(8, (count / utmSourceStats[0].count) * 80)}px`
+                            }} />
+                            <span className="text-sm text-muted-foreground w-8 text-right">{count}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {utmMediumStats.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Tag className="h-4 w-4" />
+                      UTM Mediums
+                    </CardTitle>
+                    <CardDescription>Last 30 days</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {utmMediumStats.map(({ utm_medium, count }) => (
+                        <div key={utm_medium} className="flex items-center justify-between">
+                          <span className="text-sm font-medium truncate max-w-[120px]">{utm_medium}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 bg-primary rounded-full" style={{
+                              width: `${Math.max(8, (count / utmMediumStats[0].count) * 80)}px`
+                            }} />
+                            <span className="text-sm text-muted-foreground w-8 text-right">{count}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {utmCampaignStats.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Tag className="h-4 w-4" />
+                      UTM Campaigns
+                    </CardTitle>
+                    <CardDescription>Last 30 days</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {utmCampaignStats.map(({ utm_campaign, count }) => (
+                        <div key={utm_campaign} className="flex items-center justify-between">
+                          <span className="text-sm font-medium truncate max-w-[120px]">{utm_campaign}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 bg-primary rounded-full" style={{
+                              width: `${Math.max(8, (count / utmCampaignStats[0].count) * 80)}px`
+                            }} />
+                            <span className="text-sm text-muted-foreground w-8 text-right">{count}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
 
           {hasAdvanced && (
