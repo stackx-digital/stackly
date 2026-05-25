@@ -38,6 +38,11 @@ interface LinkRow {
   utm_campaign: string | null
   utm_term: string | null
   utm_content: string | null
+  pixel_fb: string | null
+  pixel_ga: string | null
+  pixel_gtm: string | null
+  pixel_gads: string | null
+  pixel_tiktok: string | null
 }
 
 interface LinksTableProps {

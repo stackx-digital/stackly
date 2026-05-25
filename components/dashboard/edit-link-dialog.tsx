@@ -27,6 +27,11 @@ interface LinkData {
   utm_campaign: string | null
   utm_term: string | null
   utm_content: string | null
+  pixel_fb: string | null
+  pixel_ga: string | null
+  pixel_gtm: string | null
+  pixel_gads: string | null
+  pixel_tiktok: string | null
 }
 
 interface EditLinkDialogProps {
@@ -62,6 +67,16 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
   const [showUtm, setShowUtm] = useState(
     !!(link.utm_source || link.utm_medium || link.utm_campaign || link.utm_term || link.utm_content)
   )
+  const [showPixel, setShowPixel] = useState(
+    !!(link.pixel_fb || link.pixel_ga || link.pixel_gtm || link.pixel_gads || link.pixel_tiktok)
+  )
+  const [pixels, setPixels] = useState({
+    pixel_fb: link.pixel_fb || '',
+    pixel_ga: link.pixel_ga || '',
+    pixel_gtm: link.pixel_gtm || '',
+    pixel_gads: link.pixel_gads || '',
+    pixel_tiktok: link.pixel_tiktok || '',
+  })
   const [destinationUrl, setDestinationUrl] = useState(link.destination_url)
   const [utm, setUtm] = useState({
     utm_source: link.utm_source || '',
@@ -73,6 +88,7 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
   const { toast } = useToast()
 
   const hasUtmParams = Object.values(utm).some((v) => v.trim() !== '')
+  const hasPixels = Object.values(pixels).some((v) => v.trim() !== '')
   const previewUrl = buildPreviewUrl(destinationUrl, utm)
 
   async function handleSubmit(formData: FormData) {
@@ -222,6 +238,110 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+
+            {/* Pixel Tracking */}
+            <div className="border rounded-md overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowPixel((prev) => !prev)}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium bg-muted/40 hover:bg-muted/70 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  Pixel Tracking
+                  <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
+                  {hasPixels && (
+                    <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                      Active
+                    </span>
+                  )}
+                </span>
+                {showPixel ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </button>
+
+              {showPixel && (
+                <div className="px-4 py-4 space-y-3 bg-background">
+                  <p className="text-xs text-muted-foreground">
+                    Pixel scripts fire on an intermediate page before redirecting. Leave blank to skip.
+                  </p>
+
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="edit_pixel_fb" className="text-xs">Facebook Pixel ID</Label>
+                      <Input
+                        id="edit_pixel_fb"
+                        name="pixel_fb"
+                        type="text"
+                        placeholder="123456789012345"
+                        className="h-8 text-sm"
+                        value={pixels.pixel_fb}
+                        onChange={(e) => setPixels((p) => ({ ...p, pixel_fb: e.target.value }))}
+                      />
+                      <p className="text-xs text-muted-foreground">Found in Meta Events Manager &rarr; Data Sources.</p>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="edit_pixel_ga" className="text-xs">Google Analytics 4</Label>
+                      <Input
+                        id="edit_pixel_ga"
+                        name="pixel_ga"
+                        type="text"
+                        placeholder="G-XXXXXXXXXX"
+                        className="h-8 text-sm"
+                        value={pixels.pixel_ga}
+                        onChange={(e) => setPixels((p) => ({ ...p, pixel_ga: e.target.value }))}
+                      />
+                      <p className="text-xs text-muted-foreground">Found in GA4 Admin &rarr; Data Streams &rarr; Measurement ID.</p>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="edit_pixel_gtm" className="text-xs">Google Tag Manager</Label>
+                      <Input
+                        id="edit_pixel_gtm"
+                        name="pixel_gtm"
+                        type="text"
+                        placeholder="GTM-XXXXXXX"
+                        className="h-8 text-sm"
+                        value={pixels.pixel_gtm}
+                        onChange={(e) => setPixels((p) => ({ ...p, pixel_gtm: e.target.value }))}
+                      />
+                      <p className="text-xs text-muted-foreground">Found in GTM &rarr; Admin &rarr; Container ID.</p>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="edit_pixel_gads" className="text-xs">Google Ads</Label>
+                      <Input
+                        id="edit_pixel_gads"
+                        name="pixel_gads"
+                        type="text"
+                        placeholder="AW-XXXXXXXXX/conversion_label"
+                        className="h-8 text-sm"
+                        value={pixels.pixel_gads}
+                        onChange={(e) => setPixels((p) => ({ ...p, pixel_gads: e.target.value }))}
+                      />
+                      <p className="text-xs text-muted-foreground">Found in Google Ads &rarr; Goals &rarr; Conversions &rarr; Conversion ID/label.</p>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="edit_pixel_tiktok" className="text-xs">TikTok Pixel</Label>
+                      <Input
+                        id="edit_pixel_tiktok"
+                        name="pixel_tiktok"
+                        type="text"
+                        placeholder="CXXXXXXXXXXXXXXX"
+                        className="h-8 text-sm"
+                        value={pixels.pixel_tiktok}
+                        onChange={(e) => setPixels((p) => ({ ...p, pixel_tiktok: e.target.value }))}
+                      />
+                      <p className="text-xs text-muted-foreground">Found in TikTok Ads Manager &rarr; Assets &rarr; Events &rarr; Pixel ID.</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

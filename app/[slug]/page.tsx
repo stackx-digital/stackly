@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { UAParser } from 'ua-parser-js'
 import crypto from 'crypto'
+import { PixelRedirect } from '@/components/pixel-redirect'
 
 async function getGeoInfo(ip: string): Promise<{ country?: string }> {
   try {
@@ -56,10 +57,10 @@ export default async function SlugPage({
     utm_content: typeof searchParams.utm_content === 'string' ? searchParams.utm_content : null,
   }
 
-  // Feature A: Fetch link with UTM builder fields
+  // Feature A: Fetch link with UTM builder fields and pixel tracking fields
   const { data: link } = await supabase
     .from('links')
-    .select('id, destination_url, is_active, expires_at, utm_source, utm_medium, utm_campaign, utm_term, utm_content')
+    .select('id, destination_url, is_active, expires_at, utm_source, utm_medium, utm_campaign, utm_term, utm_content, pixel_fb, pixel_ga, pixel_gtm, pixel_gads, pixel_tiktok')
     .eq('slug', slug)
     .single()
 
@@ -128,5 +129,23 @@ export default async function SlugPage({
   })
 
   // Feature A: Build redirect URL with link's UTM builder params appended
-  redirect(buildRedirectUrl(link.destination_url, link))
+  const finalUrl = buildRedirectUrl(link.destination_url, link)
+
+  // If any pixel is configured, show intermediate pixel page; otherwise redirect immediately
+  const hasPixels = !!(link.pixel_fb || link.pixel_ga || link.pixel_gtm || link.pixel_gads || link.pixel_tiktok)
+
+  if (!hasPixels) {
+    redirect(finalUrl)
+  }
+
+  return (
+    <PixelRedirect
+      destinationUrl={finalUrl}
+      pixelFb={link.pixel_fb ?? null}
+      pixelGa={link.pixel_ga ?? null}
+      pixelGtm={link.pixel_gtm ?? null}
+      pixelGads={link.pixel_gads ?? null}
+      pixelTiktok={link.pixel_tiktok ?? null}
+    />
+  )
 }

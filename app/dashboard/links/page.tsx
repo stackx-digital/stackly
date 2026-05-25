@@ -16,7 +16,8 @@ export default async function LinksPage() {
       .from('links')
       .select(`
         id, slug, destination_url, title, is_active, created_at, expires_at,
-        utm_source, utm_medium, utm_campaign, utm_term, utm_content
+        utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+        pixel_fb, pixel_ga, pixel_gtm, pixel_gads, pixel_tiktok
       `)
       .eq('user_id', user.id)
       .eq('is_active', true)

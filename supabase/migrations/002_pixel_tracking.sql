@@ -1,0 +1,6 @@
+ALTER TABLE public.links
+  ADD COLUMN IF NOT EXISTS pixel_fb     TEXT,
+  ADD COLUMN IF NOT EXISTS pixel_ga     TEXT,
+  ADD COLUMN IF NOT EXISTS pixel_gtm    TEXT,
+  ADD COLUMN IF NOT EXISTS pixel_gads   TEXT,
+  ADD COLUMN IF NOT EXISTS pixel_tiktok TEXT;

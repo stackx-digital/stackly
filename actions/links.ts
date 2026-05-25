@@ -61,6 +61,12 @@ export async function createLink(formData: FormData) {
   const utmTerm = (formData.get('utm_term') as string | null)?.trim() || null
   const utmContent = (formData.get('utm_content') as string | null)?.trim() || null
 
+  const pixelFb = (formData.get('pixel_fb') as string | null)?.trim() || null
+  const pixelGa = (formData.get('pixel_ga') as string | null)?.trim() || null
+  const pixelGtm = (formData.get('pixel_gtm') as string | null)?.trim() || null
+  const pixelGads = (formData.get('pixel_gads') as string | null)?.trim() || null
+  const pixelTiktok = (formData.get('pixel_tiktok') as string | null)?.trim() || null
+
   const { error } = await supabase.from('links').insert({
     user_id: user.id,
     slug,
@@ -71,6 +77,11 @@ export async function createLink(formData: FormData) {
     utm_campaign: utmCampaign,
     utm_term: utmTerm,
     utm_content: utmContent,
+    pixel_fb: pixelFb,
+    pixel_ga: pixelGa,
+    pixel_gtm: pixelGtm,
+    pixel_gads: pixelGads,
+    pixel_tiktok: pixelTiktok,
   })
 
   if (error) {
@@ -160,6 +171,12 @@ export async function updateLink(linkId: string, formData: FormData) {
   const utmTerm = (formData.get('utm_term') as string | null)?.trim() || null
   const utmContent = (formData.get('utm_content') as string | null)?.trim() || null
 
+  const pixelFb = (formData.get('pixel_fb') as string | null)?.trim() || null
+  const pixelGa = (formData.get('pixel_ga') as string | null)?.trim() || null
+  const pixelGtm = (formData.get('pixel_gtm') as string | null)?.trim() || null
+  const pixelGads = (formData.get('pixel_gads') as string | null)?.trim() || null
+  const pixelTiktok = (formData.get('pixel_tiktok') as string | null)?.trim() || null
+
   if (!isValidUrl(destinationUrl)) {
     return { error: 'Please enter a valid URL' }
   }
@@ -179,6 +196,11 @@ export async function updateLink(linkId: string, formData: FormData) {
       utm_campaign: utmCampaign,
       utm_term: utmTerm,
       utm_content: utmContent,
+      pixel_fb: pixelFb,
+      pixel_ga: pixelGa,
+      pixel_gtm: pixelGtm,
+      pixel_gads: pixelGads,
+      pixel_tiktok: pixelTiktok,
       updated_at: new Date().toISOString(),
     })
     .eq('id', linkId)
