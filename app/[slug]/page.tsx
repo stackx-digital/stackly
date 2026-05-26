@@ -3,8 +3,53 @@ import { headers, cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { UAParser } from 'ua-parser-js'
 import crypto from 'crypto'
+import { cache } from 'react'
 import { PixelRedirect } from '@/components/pixel-redirect'
 import { PasswordGate } from '@/components/password-gate'
+import { OgRedirect } from '@/components/og-redirect'
+import type { Metadata } from 'next'
+
+// Cached per-request so generateMetadata and the page share one DB call
+const getOgMeta = cache(async (slug: string) => {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('links')
+    .select('og_title, og_description, og_image_url, title')
+    .eq('slug', slug)
+    .eq('is_active', true)
+    .maybeSingle()
+  return data
+})
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string }
+}): Promise<Metadata> {
+  const meta = await getOgMeta(params.slug)
+  if (!meta?.og_title && !meta?.og_image_url) return {}
+
+  const title = meta.og_title || meta.title || 'Link'
+  const description = meta.og_description ?? undefined
+  const image = meta.og_image_url ?? undefined
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      ...(image && { images: [{ url: image }] }),
+      type: 'website',
+    },
+    twitter: {
+      card: image ? 'summary_large_image' : 'summary',
+      title,
+      description,
+      ...(image && { images: [image] }),
+    },
+  }
+}
 
 async function getGeoInfo(ip: string): Promise<{ country?: string }> {
   try {
@@ -69,13 +114,14 @@ export default async function SlugPage({
     notFound()
   }
 
-  // Fetch ab_variants separately — safe to fail if migration hasn't run yet
-  const { data: abData } = await supabase
+  // Fetch ab_variants + og fields separately — safe to fail if migrations haven't run
+  const { data: extraData } = await supabase
     .from('links')
-    .select('ab_variants')
+    .select('ab_variants, og_title, og_image_url')
     .eq('id', link.id)
     .single()
-  const abVariantsRaw = abData?.ab_variants ?? []
+  const abVariantsRaw = extraData?.ab_variants ?? []
+  const hasOg = !!(extraData?.og_title || extraData?.og_image_url)
 
   if (link.expires_at && new Date(link.expires_at) < new Date()) {
     notFound()
@@ -192,18 +238,24 @@ export default async function SlugPage({
   const finalUrl = buildRedirectUrl(finalDestination, link)
   const hasPixels = !!(link.pixel_fb || link.pixel_ga || link.pixel_gtm || link.pixel_gads || link.pixel_tiktok)
 
-  if (!hasPixels) {
-    redirect(finalUrl)
+  // Links with OG preview data must render HTML so crawlers can read the meta tags.
+  // generateMetadata above puts the OG tags in <head>; this component JS-redirects humans.
+  if (hasPixels) {
+    return (
+      <PixelRedirect
+        destinationUrl={finalUrl}
+        pixelFb={link.pixel_fb ?? null}
+        pixelGa={link.pixel_ga ?? null}
+        pixelGtm={link.pixel_gtm ?? null}
+        pixelGads={link.pixel_gads ?? null}
+        pixelTiktok={link.pixel_tiktok ?? null}
+      />
+    )
   }
 
-  return (
-    <PixelRedirect
-      destinationUrl={finalUrl}
-      pixelFb={link.pixel_fb ?? null}
-      pixelGa={link.pixel_ga ?? null}
-      pixelGtm={link.pixel_gtm ?? null}
-      pixelGads={link.pixel_gads ?? null}
-      pixelTiktok={link.pixel_tiktok ?? null}
-    />
-  )
+  if (hasOg) {
+    return <OgRedirect url={finalUrl} />
+  }
+
+  redirect(finalUrl)
 }

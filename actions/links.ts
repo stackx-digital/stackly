@@ -102,6 +102,10 @@ export async function createLink(formData: FormData) {
     }
   }
 
+  const ogTitle = (formData.get('og_title') as string | null)?.trim() || null
+  const ogDescription = (formData.get('og_description') as string | null)?.trim() || null
+  const ogImageUrl = (formData.get('og_image_url') as string | null)?.trim() || null
+
   const { error } = await supabase.from('links').insert({
     user_id: user.id,
     slug,
@@ -123,6 +127,9 @@ export async function createLink(formData: FormData) {
     redirect_tablet: redirectTablet,
     geo_rules: geoRules,
     ab_variants: abVariants,
+    og_title: ogTitle,
+    og_description: ogDescription,
+    og_image_url: ogImageUrl,
   })
 
   if (error) {
@@ -247,6 +254,10 @@ export async function updateLink(linkId: string, formData: FormData) {
     }
   }
 
+  const ogTitle = (formData.get('og_title') as string | null)?.trim() || null
+  const ogDescription = (formData.get('og_description') as string | null)?.trim() || null
+  const ogImageUrl = (formData.get('og_image_url') as string | null)?.trim() || null
+
   if (!isValidUrl(destinationUrl)) {
     return { error: 'Please enter a valid URL' }
   }
@@ -276,6 +287,9 @@ export async function updateLink(linkId: string, formData: FormData) {
     redirect_tablet: redirectTablet,
     geo_rules: geoRules,
     ab_variants: abVariants,
+    og_title: ogTitle,
+    og_description: ogDescription,
+    og_image_url: ogImageUrl,
     updated_at: new Date().toISOString(),
   }
 

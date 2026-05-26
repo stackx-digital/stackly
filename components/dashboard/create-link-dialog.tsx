@@ -14,7 +14,7 @@ import {
   SheetDescription,
   SheetFooter,
 } from '@/components/ui/sheet'
-import { Plus, Link2, FlaskConical } from 'lucide-react'
+import { Plus, Link2, FlaskConical, Share2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
 
@@ -50,6 +50,9 @@ export function CreateLinkDialog({ canCreate, plan: _plan }: CreateLinkDialogPro
   const [abEnabled, setAbEnabled] = useState(false)
   const [abBUrl, setAbBUrl] = useState('')
   const [abWeightA, setAbWeightA] = useState(50)
+  const [ogTitle, setOgTitle] = useState('')
+  const [ogDescription, setOgDescription] = useState('')
+  const [ogImageUrl, setOgImageUrl] = useState('')
   const { toast } = useToast()
 
   const previewUrl = buildPreviewUrl(destinationUrl, utm)
@@ -73,6 +76,9 @@ export function CreateLinkDialog({ canCreate, plan: _plan }: CreateLinkDialogPro
     setAbEnabled(false)
     setAbBUrl('')
     setAbWeightA(50)
+    setOgTitle('')
+    setOgDescription('')
+    setOgImageUrl('')
     setError(null)
   }
 
@@ -146,6 +152,10 @@ export function CreateLinkDialog({ canCreate, plan: _plan }: CreateLinkDialogPro
                 <TabsList className="w-full mb-6">
                   <TabsTrigger value="basic" className="flex-1">Basic</TabsTrigger>
                   <TabsTrigger value="tracking" className="flex-1">Tracking</TabsTrigger>
+                  <TabsTrigger value="preview" className="flex-1">
+                    <Share2 className="h-3.5 w-3.5 mr-1" />
+                    Preview
+                  </TabsTrigger>
                   <TabsTrigger value="advanced" className="flex-1">Advanced</TabsTrigger>
                 </TabsList>
 
@@ -315,6 +325,74 @@ export function CreateLinkDialog({ canCreate, plan: _plan }: CreateLinkDialogPro
                       </div>
                     </div>
                   </div>
+                </TabsContent>
+
+                {/* ── PREVIEW TAB ── */}
+                <TabsContent value="preview" className="space-y-5 mt-0">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold">Social Preview</p>
+                    <p className="text-xs text-muted-foreground">
+                      Customise how your link looks when shared on WhatsApp, Telegram, Facebook, and Twitter.
+                      If left empty, the destination site&apos;s own preview is used.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="og_title" className="text-sm">Preview Title</Label>
+                    <Input
+                      id="og_title" name="og_title"
+                      placeholder="e.g. 🔥 Raya Sale — Up to 70% Off"
+                      value={ogTitle} onChange={(e) => setOgTitle(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="og_description" className="text-sm">Preview Description</Label>
+                    <textarea
+                      id="og_description" name="og_description"
+                      placeholder="Short description shown under the title…"
+                      rows={2}
+                      value={ogDescription} onChange={(e) => setOgDescription(e.target.value)}
+                      className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="og_image_url" className="text-sm">Preview Image URL</Label>
+                    <Input
+                      id="og_image_url" name="og_image_url"
+                      type="url"
+                      placeholder="https://example.com/promo-banner.jpg"
+                      value={ogImageUrl} onChange={(e) => setOgImageUrl(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">Recommended: 1200×630 px JPG or PNG.</p>
+                  </div>
+
+                  {/* Live WhatsApp-style mockup */}
+                  {(ogTitle || ogImageUrl) && (
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Preview</p>
+                      <div className="rounded-xl border bg-[#f0f2f5] p-3">
+                        <div className="rounded-lg overflow-hidden bg-white shadow-sm border">
+                          {ogImageUrl && (
+                            <img
+                              src={ogImageUrl}
+                              alt=""
+                              className="w-full h-36 object-cover"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                            />
+                          )}
+                          <div className="p-3 space-y-0.5">
+                            {ogTitle && <p className="text-sm font-semibold leading-tight line-clamp-2">{ogTitle}</p>}
+                            {ogDescription && <p className="text-xs text-muted-foreground line-clamp-2">{ogDescription}</p>}
+                            <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wide pt-0.5">
+                              {(typeof window !== 'undefined' ? window.location.hostname : 'stackly')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </TabsContent>
 
                 {/* ── ADVANCED TAB ── */}

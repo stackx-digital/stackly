@@ -48,6 +48,9 @@ interface LinkRow {
   redirect_tablet: string | null
   geo_rules: unknown
   ab_variants: unknown
+  og_title: string | null
+  og_description: string | null
+  og_image_url: string | null
   link_click_summary: { total_clicks: number; unique_clicks?: number } | { total_clicks: number; unique_clicks?: number }[] | null
 }
 
