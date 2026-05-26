@@ -161,7 +161,7 @@ export function CreateLinkDialog({ canCreate, plan: _plan }: CreateLinkDialogPro
                 </TabsList>
 
                 {/* ── BASIC TAB ── */}
-                <TabsContent value="basic" className="space-y-5 mt-0">
+                <TabsContent value="basic" forceMount className="space-y-5 mt-0 data-[state=inactive]:hidden">
                   <div className="space-y-2">
                     <Label htmlFor="destination_url">Destination URL <span className="text-destructive">*</span></Label>
                     <Input
@@ -252,7 +252,7 @@ export function CreateLinkDialog({ canCreate, plan: _plan }: CreateLinkDialogPro
                 </TabsContent>
 
                 {/* ── TRACKING TAB ── */}
-                <TabsContent value="tracking" className="space-y-6 mt-0">
+                <TabsContent value="tracking" forceMount className="space-y-6 mt-0 data-[state=inactive]:hidden">
                   {/* UTM Parameters */}
                   <div className="space-y-3">
                     <div>
@@ -329,7 +329,7 @@ export function CreateLinkDialog({ canCreate, plan: _plan }: CreateLinkDialogPro
                 </TabsContent>
 
                 {/* ── PREVIEW TAB ── */}
-                <TabsContent value="preview" className="space-y-5 mt-0">
+                <TabsContent value="preview" forceMount className="space-y-5 mt-0 data-[state=inactive]:hidden">
                   <div className="space-y-1">
                     <p className="text-sm font-semibold">Social Preview</p>
                     <p className="text-xs text-muted-foreground">
@@ -390,7 +390,7 @@ export function CreateLinkDialog({ canCreate, plan: _plan }: CreateLinkDialogPro
                 </TabsContent>
 
                 {/* ── ADVANCED TAB ── */}
-                <TabsContent value="advanced" className="space-y-5 mt-0">
+                <TabsContent value="advanced" forceMount className="space-y-5 mt-0 data-[state=inactive]:hidden">
                   <div className="space-y-1">
                     <Label htmlFor="active_from" className="text-sm">Go live on <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
                     <input

@@ -188,7 +188,7 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
               </TabsList>
 
               {/* ── BASIC TAB ── */}
-              <TabsContent value="basic" className="space-y-5 mt-0">
+              <TabsContent value="basic" forceMount className="space-y-5 mt-0 data-[state=inactive]:hidden">
                 <div className="space-y-1">
                   <Label className="text-muted-foreground text-xs">Short URL (read-only)</Label>
                   <div className="flex h-10 items-center rounded-md border bg-muted px-3 text-sm font-mono text-muted-foreground">
@@ -269,7 +269,7 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
               </TabsContent>
 
               {/* ── TRACKING TAB ── */}
-              <TabsContent value="tracking" className="space-y-6 mt-0">
+              <TabsContent value="tracking" forceMount className="space-y-6 mt-0 data-[state=inactive]:hidden">
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm font-semibold">UTM Parameters</p>
@@ -345,7 +345,7 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
               </TabsContent>
 
               {/* ── PREVIEW TAB ── */}
-              <TabsContent value="preview" className="space-y-5 mt-0">
+              <TabsContent value="preview" forceMount className="space-y-5 mt-0 data-[state=inactive]:hidden">
                 <div className="space-y-1">
                   <p className="text-sm font-semibold">Social Preview</p>
                   <p className="text-xs text-muted-foreground">
@@ -405,7 +405,7 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
               </TabsContent>
 
               {/* ── ADVANCED TAB ── */}
-              <TabsContent value="advanced" className="space-y-5 mt-0">
+              <TabsContent value="advanced" forceMount className="space-y-5 mt-0 data-[state=inactive]:hidden">
                 <div className="space-y-1">
                   <Label htmlFor="edit_active_from" className="text-sm">Go live on <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
                   <input
