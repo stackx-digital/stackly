@@ -13,7 +13,7 @@ export default async function LinksPage() {
 
   if (!user) return null
 
-  const [linksResult, subscriptionResult] = await Promise.all([
+  const [linksResult, subscriptionResult, customDomainResult] = await Promise.all([
     supabase
       .from('links')
       .select(`
@@ -31,6 +31,12 @@ export default async function LinksPage() {
       .select('plan')
       .eq('user_id', user.id)
       .single(),
+    supabase
+      .from('custom_domains')
+      .select('domain')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle(),
   ])
 
   const links = linksResult.data || []
@@ -38,6 +44,8 @@ export default async function LinksPage() {
   const planConfig = PLANS[plan]
   const linkLimit = planConfig.linkLimit
   const canCreate = linkLimit === Infinity || links.length < (linkLimit as number)
+  const activeDomain = customDomainResult.data?.domain
+  const baseUrl = activeDomain ? `https://${activeDomain}` : await getBaseUrl()
 
   return (
     <div className="space-y-6">
@@ -81,7 +89,7 @@ export default async function LinksPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <LinksTable links={links} baseUrl={await getBaseUrl()} />
+          <LinksTable links={links} baseUrl={baseUrl} />
         </CardContent>
       </Card>
     </div>

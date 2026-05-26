@@ -4,13 +4,14 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { Link2, LayoutDashboard, BarChart3, CreditCard, Settings, Layers, Key, Zap } from 'lucide-react'
+import { Link2, LayoutDashboard, BarChart3, CreditCard, Settings, Layers, Key, Zap, Globe } from 'lucide-react'
 
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/links', label: 'My Links', icon: Link2, exact: false },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3, exact: false },
   { href: '/dashboard/bio', label: 'Link-in-Bio', icon: Layers, exact: false },
+  { href: '/dashboard/domains', label: 'Custom Domain', icon: Globe, exact: false },
   { href: '/dashboard/api', label: 'API Keys', icon: Key, exact: false },
   { href: '/dashboard/webhooks', label: 'Webhooks', icon: Zap, exact: false },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard, exact: false },
