@@ -106,7 +106,8 @@ export async function createLink(formData: FormData) {
   const ogDescription = (formData.get('og_description') as string | null)?.trim() || null
   const ogImageUrl = (formData.get('og_image_url') as string | null)?.trim() || null
 
-  const { error } = await supabase.from('links').insert({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const insertPayload: Record<string, any> = {
     user_id: user.id,
     slug,
     destination_url: destinationUrl,
@@ -127,10 +128,13 @@ export async function createLink(formData: FormData) {
     redirect_tablet: redirectTablet,
     geo_rules: geoRules,
     ab_variants: abVariants,
-    og_title: ogTitle,
-    og_description: ogDescription,
-    og_image_url: ogImageUrl,
-  })
+  }
+  // Only include OG fields if migration 010 has been applied (non-null values)
+  if (ogTitle !== null) insertPayload.og_title = ogTitle
+  if (ogDescription !== null) insertPayload.og_description = ogDescription
+  if (ogImageUrl !== null) insertPayload.og_image_url = ogImageUrl
+
+  const { error } = await supabase.from('links').insert(insertPayload)
 
   if (error) {
     return { error: error.message }
@@ -287,11 +291,12 @@ export async function updateLink(linkId: string, formData: FormData) {
     redirect_tablet: redirectTablet,
     geo_rules: geoRules,
     ab_variants: abVariants,
-    og_title: ogTitle,
-    og_description: ogDescription,
-    og_image_url: ogImageUrl,
     updated_at: new Date().toISOString(),
   }
+  // Only include OG fields if migration 010 has been applied
+  if (ogTitle !== null) updatePayload.og_title = ogTitle
+  if (ogDescription !== null) updatePayload.og_description = ogDescription
+  if (ogImageUrl !== null) updatePayload.og_image_url = ogImageUrl
 
   if (passwordInput) {
     updatePayload.password_hash = crypto.createHash('sha256').update(passwordInput).digest('hex')

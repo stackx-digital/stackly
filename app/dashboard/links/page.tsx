@@ -21,7 +21,6 @@ export default async function LinksPage() {
         utm_source, utm_medium, utm_campaign, utm_term, utm_content,
         pixel_fb, pixel_ga, pixel_gtm, pixel_gads, pixel_tiktok,
         active_from, redirect_mobile, redirect_tablet, geo_rules, ab_variants,
-        og_title, og_description, og_image_url,
         link_click_summary ( total_clicks )
       `)
       .eq('user_id', user.id)

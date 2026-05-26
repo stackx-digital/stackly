@@ -39,9 +39,9 @@ interface LinkData {
   redirect_tablet: string | null
   geo_rules: unknown
   ab_variants: unknown
-  og_title: string | null
-  og_description: string | null
-  og_image_url: string | null
+  og_title?: string | null
+  og_description?: string | null
+  og_image_url?: string | null
 }
 
 interface EditLinkDialogProps {
@@ -109,9 +109,9 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
   const [abEnabled, setAbEnabled] = useState(existingVariants.length >= 2)
   const [abBUrl, setAbBUrl] = useState(existingVariants[1]?.url || '')
   const [abWeightA, setAbWeightA] = useState(existingVariants[0]?.weight ?? 50)
-  const [ogTitle, setOgTitle] = useState(link.og_title || '')
-  const [ogDescription, setOgDescription] = useState(link.og_description || '')
-  const [ogImageUrl, setOgImageUrl] = useState(link.og_image_url || '')
+  const [ogTitle, setOgTitle] = useState(link.og_title ?? '')
+  const [ogDescription, setOgDescription] = useState(link.og_description ?? '')
+  const [ogImageUrl, setOgImageUrl] = useState(link.og_image_url ?? '')
 
   const { toast } = useToast()
   const hasUtmParams = Object.values(utm).some((v) => v.trim() !== '')
