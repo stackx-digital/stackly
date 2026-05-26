@@ -5,6 +5,7 @@ import { BulkImportDialog } from '@/components/dashboard/bulk-import-dialog'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { PLANS } from '@/lib/plans'
+import { getBaseUrl } from '@/lib/base-url'
 
 export default async function LinksPage() {
   const supabase = await createClient()
@@ -79,7 +80,7 @@ export default async function LinksPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <LinksTable links={links} baseUrl={process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://stackly-wheat.vercel.app')} />
+          <LinksTable links={links} baseUrl={await getBaseUrl()} />
         </CardContent>
       </Card>
     </div>

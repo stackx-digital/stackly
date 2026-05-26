@@ -4,6 +4,7 @@ import { BioLinksManager } from './bio-links-manager'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-react'
+import { getBaseUrl } from '@/lib/base-url'
 
 export default async function BioDashboardPage() {
   const supabase = await createClient()
@@ -17,7 +18,7 @@ export default async function BioDashboardPage() {
     .order('position', { referencedTable: 'bio_links', ascending: true })
     .single()
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://stackly-wheat.vercel.app')
+  const baseUrl = await getBaseUrl()
   const bioUrl = bioPage ? `${baseUrl}/u/${bioPage.username}` : null
 
   return (
