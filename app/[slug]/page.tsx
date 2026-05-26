@@ -58,16 +58,24 @@ export default async function SlugPage({
     utm_content: typeof searchParams.utm_content === 'string' ? searchParams.utm_content : null,
   }
 
-  // Fetch link with all fields including new enhancements
+  // Fetch link core fields (never includes ab_variants so a pending migration can't break redirects)
   const { data: link } = await supabase
     .from('links')
-    .select('id, destination_url, is_active, expires_at, utm_source, utm_medium, utm_campaign, utm_term, utm_content, pixel_fb, pixel_ga, pixel_gtm, pixel_gads, pixel_tiktok, active_from, password_hash, redirect_mobile, redirect_tablet, geo_rules, ab_variants')
+    .select('id, destination_url, is_active, expires_at, utm_source, utm_medium, utm_campaign, utm_term, utm_content, pixel_fb, pixel_ga, pixel_gtm, pixel_gads, pixel_tiktok, active_from, password_hash, redirect_mobile, redirect_tablet, geo_rules')
     .eq('slug', slug)
     .single()
 
   if (!link || !link.is_active) {
     notFound()
   }
+
+  // Fetch ab_variants separately — safe to fail if migration hasn't run yet
+  const { data: abData } = await supabase
+    .from('links')
+    .select('ab_variants')
+    .eq('id', link.id)
+    .single()
+  const abVariantsRaw = abData?.ab_variants ?? []
 
   if (link.expires_at && new Date(link.expires_at) < new Date()) {
     notFound()
@@ -126,8 +134,8 @@ export default async function SlugPage({
 
   // A/B Split Testing: pick variant by weight before other routing
   type AbVariant = { label: string; url: string; weight: number }
-  const abVariants: AbVariant[] = Array.isArray(link.ab_variants) && (link.ab_variants as AbVariant[]).length >= 2
-    ? (link.ab_variants as AbVariant[])
+  const abVariants: AbVariant[] = Array.isArray(abVariantsRaw) && (abVariantsRaw as AbVariant[]).length >= 2
+    ? (abVariantsRaw as AbVariant[])
     : []
 
   let abVariantLabel: string | null = null
