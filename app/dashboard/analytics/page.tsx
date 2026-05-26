@@ -7,6 +7,7 @@ import { BarChart3, MousePointerClick, Globe, Smartphone, TrendingUp, Tag } from
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { WorldMap } from '@/components/dashboard/world-map'
+import { ClicksChart } from '@/components/dashboard/clicks-chart'
 
 export default async function AnalyticsPage({
   searchParams,
@@ -35,6 +36,7 @@ export default async function AnalyticsPage({
 
   // Get click stats for selected link
   let clickStats = null
+  let dailyClicks: { date: string; clicks: number; unique: number }[] = []
   let countryStats: { country: string; count: number }[] = []
   let allCountryStats: { country: string; count: number }[] = []
   let deviceStats: { device: string; count: number }[] = []
@@ -46,7 +48,7 @@ export default async function AnalyticsPage({
   if (selectedLinkId) {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
-    const [totalResult, uniqueResult] = await Promise.all([
+    const [totalResult, uniqueResult, clicksRawResult] = await Promise.all([
       supabase
         .from('clicks')
         .select('*', { count: 'exact', head: true })
@@ -58,7 +60,29 @@ export default async function AnalyticsPage({
         .eq('link_id', selectedLinkId)
         .eq('is_unique', true)
         .gte('timestamp', thirtyDaysAgo),
+      supabase
+        .from('clicks')
+        .select('timestamp, is_unique')
+        .eq('link_id', selectedLinkId)
+        .gte('timestamp', thirtyDaysAgo)
+        .order('timestamp', { ascending: true }),
     ])
+
+    // Aggregate raw clicks by date
+    const clicksByDate: Record<string, { clicks: number; unique: number }> = {}
+    for (const row of (clicksRawResult.data || [])) {
+      const date = (row.timestamp as string).slice(0, 10)
+      if (!clicksByDate[date]) clicksByDate[date] = { clicks: 0, unique: 0 }
+      clicksByDate[date].clicks += 1
+      if (row.is_unique) clicksByDate[date].unique += 1
+    }
+
+    // Build a full 30-day array (fill missing days with 0)
+    dailyClicks = Array.from({ length: 30 }, (_, i) => {
+      const d = new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000)
+      const date = d.toISOString().slice(0, 10)
+      return { date, ...(clicksByDate[date] ?? { clicks: 0, unique: 0 }) }
+    })
 
     clickStats = {
       total: totalResult.count || 0,
@@ -215,6 +239,19 @@ export default async function AnalyticsPage({
 
       {selectedLink && clickStats && (
         <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Daily Click Trend
+              </CardTitle>
+              <CardDescription>Total and unique clicks per day — last 30 days</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ClicksChart data={dailyClicks} />
+            </CardContent>
+          </Card>
+
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

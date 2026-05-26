@@ -48,6 +48,7 @@ interface LinkRow {
   redirect_tablet: string | null
   geo_rules: unknown
   ab_variants: unknown
+  link_click_summary: { total_clicks: number; unique_clicks?: number } | { total_clicks: number; unique_clicks?: number }[] | null
 }
 
 interface LinksTableProps {
@@ -60,6 +61,7 @@ export function LinksTable({ links, baseUrl }: LinksTableProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [qrSlug, setQrSlug] = useState<string | null>(null)
   const [editingLink, setEditingLink] = useState<LinkRow | null>(null)
+  const [search, setSearch] = useState('')
 
   const shortUrl = (slug: string) => `${baseUrl}/${slug}`
 
@@ -78,6 +80,13 @@ export function LinksTable({ links, baseUrl }: LinksTableProps) {
     }
     setDeletingId(null)
   }
+
+  const filtered = links.filter(l =>
+    !search ||
+    l.slug.includes(search.toLowerCase()) ||
+    (l.title?.toLowerCase().includes(search.toLowerCase())) ||
+    l.destination_url.toLowerCase().includes(search.toLowerCase())
+  )
 
   const activeQrLink = links.find(l => l.slug === qrSlug)
 
@@ -106,17 +115,36 @@ export function LinksTable({ links, baseUrl }: LinksTableProps) {
         onOpenChange={(open) => { if (!open) setQrSlug(null) }}
       />
     )}
+    <div className="mb-4">
+      <input
+        type="text"
+        placeholder="Search links..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="flex h-9 w-full max-w-sm rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      />
+    </div>
+    {filtered.length === 0 && search ? (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">No links match your search.</p>
+      </div>
+    ) : (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Link</TableHead>
           <TableHead className="hidden md:table-cell">Destination</TableHead>
+          <TableHead className="hidden sm:table-cell">Clicks</TableHead>
           <TableHead className="hidden sm:table-cell">Created</TableHead>
           <TableHead className="w-[50px]"></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {links.map((link) => (
+        {filtered.map((link) => {
+          const clicks = Array.isArray(link.link_click_summary)
+            ? link.link_click_summary[0]?.total_clicks
+            : (link.link_click_summary as { total_clicks?: number } | null)?.total_clicks
+          return (
           <TableRow key={link.id}>
             <TableCell>
               <div className="flex flex-col gap-1">
@@ -139,6 +167,9 @@ export function LinksTable({ links, baseUrl }: LinksTableProps) {
               <span className="text-sm text-muted-foreground">
                 {truncate(link.destination_url, 50)}
               </span>
+            </TableCell>
+            <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
+              {clicks ?? '—'}
             </TableCell>
             <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
               {formatDate(link.created_at)}
@@ -188,9 +219,11 @@ export function LinksTable({ links, baseUrl }: LinksTableProps) {
               </DropdownMenu>
             </TableCell>
           </TableRow>
-        ))}
+          )
+        })}
       </TableBody>
     </Table>
+    )}
     </>
   )
 }
