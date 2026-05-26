@@ -15,6 +15,7 @@ import {
   SheetFooter,
 } from '@/components/ui/sheet'
 import { Pencil, FlaskConical, Share2 } from 'lucide-react'
+import { ImageUpload } from '@/components/dashboard/image-upload'
 import { useToast } from '@/hooks/use-toast'
 
 interface LinkData {
@@ -374,34 +375,27 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="edit_og_image_url" className="text-sm">Preview Image URL</Label>
-                  <Input
-                    id="edit_og_image_url" name="og_image_url"
-                    type="url"
-                    placeholder="https://example.com/promo-banner.jpg"
-                    value={ogImageUrl} onChange={(e) => setOgImageUrl(e.target.value)}
+                  <Label className="text-sm">Preview Image</Label>
+                  <ImageUpload
+                    value={ogImageUrl}
+                    onChange={setOgImageUrl}
+                    inputName="og_image_url"
                   />
-                  <p className="text-xs text-muted-foreground">Recommended: 1200×630 px JPG or PNG.</p>
                 </div>
 
-                {(ogTitle || ogImageUrl) && (
+                {ogTitle && (
                   <div className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Preview</p>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">WhatsApp Preview</p>
                     <div className="rounded-xl border bg-[#f0f2f5] p-3">
                       <div className="rounded-lg overflow-hidden bg-white shadow-sm border">
                         {ogImageUrl && (
-                          <img
-                            src={ogImageUrl}
-                            alt=""
-                            className="w-full h-36 object-cover"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                          />
+                          <img src={ogImageUrl} alt="" className="w-full h-36 object-cover" />
                         )}
                         <div className="p-3 space-y-0.5">
-                          {ogTitle && <p className="text-sm font-semibold leading-tight line-clamp-2">{ogTitle}</p>}
+                          <p className="text-sm font-semibold leading-tight line-clamp-2">{ogTitle}</p>
                           {ogDescription && <p className="text-xs text-muted-foreground line-clamp-2">{ogDescription}</p>}
                           <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wide pt-0.5">
-                            {(typeof window !== 'undefined' ? window.location.hostname : 'stackly')}
+                            {typeof window !== 'undefined' ? window.location.hostname : 'stackly'}
                           </p>
                         </div>
                       </div>
