@@ -20,8 +20,7 @@ export default async function LinksPage() {
         id, slug, destination_url, title, is_active, created_at, expires_at,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content,
         pixel_fb, pixel_ga, pixel_gtm, pixel_gads, pixel_tiktok,
-        active_from, redirect_mobile, redirect_tablet, geo_rules, ab_variants,
-        link_click_summary ( total_clicks )
+        active_from, redirect_mobile, redirect_tablet, geo_rules, ab_variants
       `)
       .eq('user_id', user.id)
       .eq('is_active', true)
@@ -39,13 +38,25 @@ export default async function LinksPage() {
       .maybeSingle(),
   ])
 
-  const links = linksResult.data || []
-  if (linksResult.error) {
-    console.error('[LinksPage] links query error:', linksResult.error)
+  const rawLinks = linksResult.data || []
+
+  // Fetch click counts separately — link_click_summary is a VIEW with no FK,
+  // so PostgREST embedded resource syntax doesn't work on it.
+  const clickMap = new Map<string, number>()
+  if (rawLinks.length > 0) {
+    const { data: summaries } = await supabase
+      .from('link_click_summary')
+      .select('link_id, total_clicks')
+      .in('link_id', rawLinks.map((l) => l.id))
+    for (const s of summaries || []) {
+      clickMap.set(s.link_id, s.total_clicks ?? 0)
+    }
   }
-  if (customDomainResult.error) {
-    console.error('[LinksPage] custom_domains query error:', customDomainResult.error)
-  }
+
+  const links = rawLinks.map((l) => ({
+    ...l,
+    link_click_summary: { total_clicks: clickMap.get(l.id) ?? 0 },
+  }))
   const plan = (subscriptionResult.data?.plan || 'free') as keyof typeof PLANS
   const planConfig = PLANS[plan]
   const linkLimit = planConfig.linkLimit
