@@ -6,12 +6,47 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-const THEMES = [
-  { value: 'violet', label: 'Violet', color: 'bg-violet-500' },
-  { value: 'blue', label: 'Blue', color: 'bg-blue-500' },
-  { value: 'green', label: 'Green', color: 'bg-emerald-500' },
-  { value: 'dark', label: 'Dark', color: 'bg-gray-800' },
-  { value: 'minimal', label: 'Minimal', color: 'bg-gray-200' },
+const DESIGNS = [
+  {
+    value: 'violet',
+    label: 'Violet',
+    preview: { wrap: 'bg-gradient-to-br from-violet-600 to-purple-700', btn: 'bg-white text-violet-700 rounded-lg' },
+  },
+  {
+    value: 'ocean',
+    label: 'Ocean',
+    preview: { wrap: 'bg-gradient-to-br from-blue-500 to-cyan-600', btn: 'bg-white text-blue-700 rounded-lg' },
+  },
+  {
+    value: 'forest',
+    label: 'Forest',
+    preview: { wrap: 'bg-gradient-to-br from-emerald-500 to-teal-700', btn: 'bg-white text-emerald-700 rounded-lg' },
+  },
+  {
+    value: 'sunset',
+    label: 'Sunset',
+    preview: { wrap: 'bg-gradient-to-br from-orange-400 via-pink-500 to-rose-500', btn: 'bg-white text-rose-600 rounded-full' },
+  },
+  {
+    value: 'glass',
+    label: 'Glass',
+    preview: { wrap: 'bg-gradient-to-br from-violet-500 to-indigo-600', btn: 'bg-white/30 text-white border border-white/40 rounded-2xl' },
+  },
+  {
+    value: 'neon',
+    label: 'Neon',
+    preview: { wrap: 'bg-gray-950', btn: 'border-2 border-purple-500 text-purple-300 rounded-lg' },
+  },
+  {
+    value: 'dark',
+    label: 'Dark',
+    preview: { wrap: 'bg-gradient-to-br from-gray-900 to-slate-800', btn: 'bg-white/15 text-white border border-white/20 rounded-lg' },
+  },
+  {
+    value: 'minimal',
+    label: 'Minimal',
+    preview: { wrap: 'bg-gray-100', btn: 'bg-white border border-gray-200 text-gray-900 rounded-lg' },
+  },
 ]
 
 type BioLink = {
@@ -45,13 +80,19 @@ interface BioSettingsFormProps {
 export function BioSettingsForm({ bioPage }: BioSettingsFormProps) {
   const formRef = useRef<HTMLFormElement>(null)
   const [isPending, startTransition] = useTransition()
-  const [selectedTheme, setSelectedTheme] = useState(bioPage?.theme || 'violet')
+
+  // map old theme names to new design keys
+  const themeMap: Record<string, string> = { blue: 'ocean', green: 'forest' }
+  const rawTheme = bioPage?.theme || 'violet'
+  const initialDesign = themeMap[rawTheme] || rawTheme
+
+  const [selectedDesign, setSelectedDesign] = useState(initialDesign)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
-    formData.set('theme', selectedTheme)
+    formData.set('theme', selectedDesign)
 
     startTransition(async () => {
       const result = await upsertBioPage(formData)
@@ -69,7 +110,9 @@ export function BioSettingsForm({ bioPage }: BioSettingsFormProps) {
       <div className="space-y-1.5">
         <Label htmlFor="username">Username</Label>
         <div className="flex items-center gap-1">
-          <span className="text-sm text-muted-foreground">{(process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://stackly-wheat.vercel.app')).replace(/https?:\/\//, '')}/u/</span>
+          <span className="text-sm text-muted-foreground">
+            {(process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://stackly-wheat.vercel.app')).replace(/https?:\/\//, '')}/u/
+          </span>
           <Input
             id="username"
             name="username"
@@ -104,25 +147,43 @@ export function BioSettingsForm({ bioPage }: BioSettingsFormProps) {
         />
       </div>
 
-      <div className="space-y-1.5">
-        <Label>Theme</Label>
-        <div className="flex gap-2">
-          {THEMES.map((t) => (
+      <div className="space-y-2">
+        <Label>Design</Label>
+        <div className="grid grid-cols-4 gap-2">
+          {DESIGNS.map((d) => (
             <button
-              key={t.value}
+              key={d.value}
               type="button"
-              onClick={() => setSelectedTheme(t.value)}
-              title={t.label}
-              className={`w-8 h-8 rounded-full ${t.color} transition-all focus:outline-none ${
-                selectedTheme === t.value
-                  ? 'ring-2 ring-offset-2 ring-primary scale-110'
-                  : 'opacity-70 hover:opacity-100'
+              onClick={() => setSelectedDesign(d.value)}
+              className={`relative flex flex-col overflow-hidden rounded-lg border-2 transition-all focus:outline-none ${
+                selectedDesign === d.value
+                  ? 'border-primary shadow-md scale-[1.03]'
+                  : 'border-transparent hover:border-muted-foreground/30'
               }`}
-              aria-label={t.label}
-            />
+              aria-label={d.label}
+            >
+              {/* Mini preview */}
+              <div className={`h-14 w-full flex flex-col items-center justify-center gap-1 p-1.5 ${d.preview.wrap}`}>
+                <div className={`w-5 h-5 rounded-full bg-white/20`} />
+                <div className={`w-full h-3 text-[6px] flex items-center justify-center ${d.preview.btn}`}>
+                  Link
+                </div>
+              </div>
+              {/* Label */}
+              <div className="bg-background px-1 py-0.5 text-center">
+                <span className="text-[10px] font-medium text-muted-foreground">{d.label}</span>
+              </div>
+              {/* Selected checkmark */}
+              {selectedDesign === d.value && (
+                <div className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                  <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              )}
+            </button>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground capitalize">Selected: {selectedTheme}</p>
       </div>
 
       {message && (
