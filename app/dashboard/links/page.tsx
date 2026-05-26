@@ -40,6 +40,12 @@ export default async function LinksPage() {
   ])
 
   const links = linksResult.data || []
+  if (linksResult.error) {
+    console.error('[LinksPage] links query error:', linksResult.error)
+  }
+  if (customDomainResult.error) {
+    console.error('[LinksPage] custom_domains query error:', customDomainResult.error)
+  }
   const plan = (subscriptionResult.data?.plan || 'free') as keyof typeof PLANS
   const planConfig = PLANS[plan]
   const linkLimit = planConfig.linkLimit
@@ -72,6 +78,15 @@ export default async function LinksPage() {
               </a>{' '}
               for unlimited links.
             </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {linksResult.error && (
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardContent className="py-3">
+            <p className="text-sm text-destructive font-medium">Query error — please share this with support:</p>
+            <p className="text-xs font-mono text-destructive/80 mt-1 break-all">{linksResult.error.message}</p>
           </CardContent>
         </Card>
       )}
