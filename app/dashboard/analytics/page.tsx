@@ -6,6 +6,7 @@ import { formatNumber } from '@/lib/utils'
 import { BarChart3, MousePointerClick, Globe, Smartphone, TrendingUp, Tag } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { WorldMap } from '@/components/dashboard/world-map'
 
 export default async function AnalyticsPage({
   searchParams,
@@ -35,6 +36,7 @@ export default async function AnalyticsPage({
   // Get click stats for selected link
   let clickStats = null
   let countryStats: { country: string; count: number }[] = []
+  let allCountryStats: { country: string; count: number }[] = []
   let deviceStats: { device: string; count: number }[] = []
   let browserStats: { browser: string; count: number }[] = []
   let utmSourceStats: { utm_source: string; count: number }[] = []
@@ -109,10 +111,10 @@ export default async function AnalyticsPage({
         }
         return acc
       }, {})
-      countryStats = Object.entries(countryCounts)
+      allCountryStats = Object.entries(countryCounts)
         .map(([country, count]) => ({ country, count }))
         .sort((a, b) => b.count - a.count)
-        .slice(0, 5)
+      countryStats = allCountryStats.slice(0, 5)
 
       // Aggregate device stats
       const deviceCounts = (deviceResult.data || []).reduce((acc: Record<string, number>, row) => {
@@ -344,6 +346,21 @@ export default async function AnalyticsPage({
                 </Card>
               )}
             </div>
+          )}
+
+          {hasAdvanced && allCountryStats.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Click Locations
+                </CardTitle>
+                <CardDescription>Geographic distribution of clicks in the last 30 days</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <WorldMap countryStats={allCountryStats} />
+              </CardContent>
+            </Card>
           )}
 
           {hasAdvanced && (
