@@ -17,7 +17,7 @@ export default async function BioDashboardPage() {
     .order('position', { referencedTable: 'bio_links', ascending: true })
     .single()
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://stackly.my'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://stackly-wheat.vercel.app')
   const bioUrl = bioPage ? `${baseUrl}/u/${bioPage.username}` : null
 
   return (

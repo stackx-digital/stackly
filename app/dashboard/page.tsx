@@ -13,7 +13,7 @@ export default async function DashboardPage() {
   if (!user) return null
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://stackly.my'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://stackly-wheat.vercel.app')
 
   const [linksResult, subscriptionResult, totalLinksResult, profileResult] = await Promise.all([
     supabase

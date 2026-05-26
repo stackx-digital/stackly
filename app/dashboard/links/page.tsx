@@ -79,7 +79,7 @@ export default async function LinksPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <LinksTable links={links} baseUrl={process.env.NEXT_PUBLIC_BASE_URL || 'https://stackly.my'} />
+          <LinksTable links={links} baseUrl={process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://stackly-wheat.vercel.app')} />
         </CardContent>
       </Card>
     </div>
