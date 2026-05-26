@@ -143,7 +143,7 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
             Edit Link
           </SheetTitle>
           <SheetDescription>
-            Editing <span className="font-mono text-xs text-foreground">stackly.my/{link.slug}</span>
+            Editing <span className="font-mono text-xs text-foreground">{(process.env.NEXT_PUBLIC_BASE_URL || 'https://stackly-wheat.vercel.app').replace(/https?:\/\//, '')}/{link.slug}</span>
           </SheetDescription>
         </SheetHeader>
 
@@ -179,7 +179,7 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
                 <div className="space-y-1">
                   <Label className="text-muted-foreground text-xs">Short URL (read-only)</Label>
                   <div className="flex h-10 items-center rounded-md border bg-muted px-3 text-sm font-mono text-muted-foreground">
-                    stackly.my/{link.slug}
+                    {(process.env.NEXT_PUBLIC_BASE_URL || 'https://stackly-wheat.vercel.app').replace(/https?:\/\//, '')}/{link.slug}
                   </div>
                 </div>
 

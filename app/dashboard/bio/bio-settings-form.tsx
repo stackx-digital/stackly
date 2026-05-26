@@ -69,7 +69,7 @@ export function BioSettingsForm({ bioPage }: BioSettingsFormProps) {
       <div className="space-y-1.5">
         <Label htmlFor="username">Username</Label>
         <div className="flex items-center gap-1">
-          <span className="text-sm text-muted-foreground">stackly.my/u/</span>
+          <span className="text-sm text-muted-foreground">{(process.env.NEXT_PUBLIC_BASE_URL || 'https://stackly-wheat.vercel.app').replace(/https?:\/\//, '')}/u/</span>
           <Input
             id="username"
             name="username"

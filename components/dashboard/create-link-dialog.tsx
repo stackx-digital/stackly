@@ -171,7 +171,7 @@ export function CreateLinkDialog({ canCreate, plan: _plan }: CreateLinkDialogPro
                     <Label htmlFor="slug">Custom Slug <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
                     <div className="flex items-center gap-0">
                       <span className="flex h-10 items-center rounded-l-md border border-r-0 bg-muted px-3 text-sm text-muted-foreground whitespace-nowrap">
-                        stackly.my/
+                        {(process.env.NEXT_PUBLIC_BASE_URL || 'https://stackly-wheat.vercel.app').replace(/https?:\/\//, '')}/
                       </span>
                       <Input
                         id="slug"
