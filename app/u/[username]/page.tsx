@@ -94,6 +94,7 @@ export default async function BioPage({ params }: { params: { username: string }
     .filter((l: { is_active: boolean }) => l.is_active)
     .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
   const initials = (page.title || username).slice(0, 2).toUpperCase()
+  type BioLink = { id: string; url: string; title: string; image_url?: string | null }
 
   return (
     <div className={`min-h-screen ${d.wrap} flex flex-col items-center px-4 py-16`}>
@@ -109,15 +110,22 @@ export default async function BioPage({ params }: { params: { username: string }
 
         {/* Links */}
         <div className="space-y-3">
-          {activeLinks.map((link: { id: string, url: string, title: string }) => (
+          {activeLinks.map((link: BioLink) => (
             <a
               key={link.id}
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className={`block w-full text-center py-3.5 px-6 font-medium transition-all ${d.btn}`}
+              className={`flex items-center w-full py-3.5 px-5 font-medium transition-all ${d.btn} ${link.image_url ? 'gap-3' : 'justify-center'}`}
             >
-              {link.title}
+              {link.image_url && (
+                <img
+                  src={link.image_url}
+                  alt=""
+                  className="w-7 h-7 rounded-md object-cover shrink-0"
+                />
+              )}
+              <span className={link.image_url ? '' : ''}>{link.title}</span>
             </a>
           ))}
           {activeLinks.length === 0 && (

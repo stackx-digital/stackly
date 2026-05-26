@@ -63,9 +63,13 @@ export async function addBioLink(bioPageId: string, formData: FormData) {
 
   const title = (formData.get('title') as string)?.trim()
   const url = (formData.get('url') as string)?.trim()
+  const imageUrl = (formData.get('image_url') as string)?.trim() || null
 
   if (!title || !url) return { error: 'Title and URL are required' }
   if (!url.startsWith('http://') && !url.startsWith('https://')) return { error: 'URL must start with http:// or https://' }
+  if (imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+    return { error: 'Image URL must start with http:// or https://' }
+  }
 
   // Get max position
   const { data: links } = await supabase
@@ -79,7 +83,7 @@ export async function addBioLink(bioPageId: string, formData: FormData) {
 
   const { error } = await supabase
     .from('bio_links')
-    .insert({ bio_page_id: bioPageId, title, url, position })
+    .insert({ bio_page_id: bioPageId, title, url, position, image_url: imageUrl })
 
   if (error) return { error: error.message }
 

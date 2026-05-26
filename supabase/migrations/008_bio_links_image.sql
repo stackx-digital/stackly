@@ -1,0 +1,1 @@
+ALTER TABLE public.bio_links ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT NULL;
