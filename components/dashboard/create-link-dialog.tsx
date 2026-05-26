@@ -76,9 +76,11 @@ export function CreateLinkDialog({ canCreate, plan: _plan }: CreateLinkDialogPro
     setError(null)
   }
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
     setLoading(true)
     setError(null)
+    const formData = new FormData(e.currentTarget)
     const result = await createLink(formData)
     if (result.error) {
       setError(result.error)
@@ -119,7 +121,7 @@ export function CreateLinkDialog({ canCreate, plan: _plan }: CreateLinkDialogPro
             <SheetDescription>Shorten a URL and start tracking clicks instantly.</SheetDescription>
           </SheetHeader>
 
-          <form action={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
             {/* Hidden serialised fields */}
             <input type="hidden" name="geo_rules" value={JSON.stringify(geoRules.filter((r) => r.country && r.url))} />
             <input

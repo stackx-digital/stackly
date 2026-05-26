@@ -120,9 +120,11 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
     setGeoRules((prev) => prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r)))
   }
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
     setLoading(true)
     setError(null)
+    const formData = new FormData(e.currentTarget)
     const result = await updateLink(link.id, formData)
     if (result.error) {
       setError(result.error)
@@ -147,7 +149,7 @@ export function EditLinkDialog({ link, open, onOpenChange }: EditLinkDialogProps
           </SheetDescription>
         </SheetHeader>
 
-        <form action={handleSubmit} className="flex flex-col flex-1 min-h-0">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           <input type="hidden" name="geo_rules" value={JSON.stringify(geoRules.filter((r) => r.country && r.url))} />
           <input
             type="hidden"
