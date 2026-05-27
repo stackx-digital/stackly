@@ -18,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Copy, ExternalLink, MoreHorizontal, Trash2, BarChart2, QrCode, Pencil } from 'lucide-react'
+import { Copy, ExternalLink, MoreHorizontal, Trash2, BarChart2, QrCode, Pencil, AlertTriangle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { formatDate, truncate } from '@/lib/utils'
 import Link from 'next/link'
@@ -51,6 +51,9 @@ interface LinkRow {
   og_title?: string | null
   og_description?: string | null
   og_image_url?: string | null
+  health_status?: string | null
+  health_http_status?: number | null
+  last_health_check_at?: string | null
   link_click_summary: { total_clicks: number; unique_clicks?: number } | { total_clicks: number; unique_clicks?: number }[] | null
 }
 
@@ -67,6 +70,21 @@ export function LinksTable({ links, baseUrl }: LinksTableProps) {
   const [search, setSearch] = useState('')
 
   const shortUrl = (slug: string) => `${baseUrl}/${slug}`
+
+  function HealthDot({ status, httpStatus, checkedAt }: { status?: string | null; httpStatus?: number | null; checkedAt?: string | null }) {
+    if (!status || status === 'unknown') {
+      return <span title="Not yet checked" className="inline-block w-2 h-2 rounded-full bg-gray-300 shrink-0" />
+    }
+    if (status === 'down') {
+      const label = httpStatus ? `Down (HTTP ${httpStatus})` : 'Unreachable'
+      return <span title={label} className="inline-block w-2 h-2 rounded-full bg-red-500 shrink-0 animate-pulse" />
+    }
+    if (status === 'redirected') {
+      return <span title={`Redirecting (${httpStatus ?? '3xx'})`} className="inline-block w-2 h-2 rounded-full bg-yellow-400 shrink-0" />
+    }
+    const when = checkedAt ? new Date(checkedAt).toLocaleString('en-MY') : ''
+    return <span title={`Healthy${when ? ` · checked ${when}` : ''}`} className="inline-block w-2 h-2 rounded-full bg-green-500 shrink-0" />
+  }
 
   async function handleCopy(slug: string) {
     await navigator.clipboard.writeText(shortUrl(slug))
@@ -152,12 +170,19 @@ export function LinksTable({ links, baseUrl }: LinksTableProps) {
             <TableCell>
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
+                  <HealthDot status={link.health_status} httpStatus={link.health_http_status} checkedAt={link.last_health_check_at} />
                   <span className="font-medium text-sm text-primary">
                     {baseUrl.replace('https://', '').replace('http://', '')}/{link.slug}
                   </span>
                   {link.title && (
                     <Badge variant="secondary" className="text-xs hidden sm:flex">
                       {truncate(link.title, 20)}
+                    </Badge>
+                  )}
+                  {link.health_status === 'down' && (
+                    <Badge variant="destructive" className="text-xs gap-1 hidden sm:flex">
+                      <AlertTriangle className="h-2.5 w-2.5" />
+                      Down
                     </Badge>
                   )}
                 </div>

@@ -21,7 +21,8 @@ export default async function LinksPage() {
         utm_source, utm_medium, utm_campaign, utm_term, utm_content,
         pixel_fb, pixel_ga, pixel_gtm, pixel_gads, pixel_tiktok,
         active_from, redirect_mobile, redirect_tablet, geo_rules, ab_variants,
-        og_title, og_description, og_image_url
+        og_title, og_description, og_image_url,
+        health_status, health_http_status, last_health_check_at
       `)
       .eq('user_id', user.id)
       .eq('is_active', true)
@@ -62,6 +63,7 @@ export default async function LinksPage() {
   const planConfig = PLANS[plan]
   const linkLimit = planConfig.linkLimit
   const canCreate = linkLimit === Infinity || links.length < (linkLimit as number)
+  const downLinks = links.filter((l) => (l as { health_status?: string }).health_status === 'down')
   const activeDomain = customDomainResult.data?.domain
   const baseUrl = activeDomain ? `https://${activeDomain}` : await getBaseUrl()
 
@@ -79,6 +81,19 @@ export default async function LinksPage() {
           <CreateLinkDialog canCreate={canCreate} plan={plan} />
         </div>
       </div>
+
+      {downLinks.length > 0 && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="py-4">
+            <p className="text-sm text-red-800 font-medium">
+              ⚠️ {downLinks.length} link{downLinks.length !== 1 ? 's' : ''} detected as down
+            </p>
+            <p className="text-xs text-red-700 mt-1">
+              {downLinks.map((l) => (l as { slug: string }).slug).join(', ')} — check the destination URLs. An alert email has been sent.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {!canCreate && (
         <Card className="border-amber-200 bg-amber-50">
